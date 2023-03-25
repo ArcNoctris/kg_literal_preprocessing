@@ -32,9 +32,9 @@ def calc_df()-> pd.DataFrame:
         ))
     df = pd.concat(dfs,ignore_index=True)
     df['base_name']= df['full_name'].str.extract(r'(.*)\$[0-9]+\.csv')
-    df = df.groupby('base_name').mean().round(3)
+    #df = df.groupby('base_name').mean().round(3)
     #df['name'] = df.index
-    df = df.reset_index()
+    #df = df.reset_index()
     df['dataset']= df['base_name'].str.extract(r'(.*?)\+.*')
     df['eval_method']= df['base_name'].str.extract(r'.*\$([A-Z]+)')
     df['steps'] = df['base_name'].str.findall(r'\+(.*?)-')
@@ -56,7 +56,7 @@ def process_n_times(cfg: DictConfig) -> None:
                     preprocess_string = preprocess_string +", "
             for embed in cfg['pipeline_schedule']['embed']:
                 iterations = cfg['pipeline_schedule']['iterations'] - len(df[(df["dataset"] == dataload)
-                  & (df['embedder'] == embed) & (df['steps']== preprocess_string)])
+                  & (df['embedder'] == embed) & (df['steps']== preprocess_string) & (df['eval_method']=='SVM')])
                 
                 cfg['pipeline']['dataload'] = dataload
                 cfg['pipeline']['preprocess'] = preprocess
