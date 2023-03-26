@@ -97,14 +97,14 @@ evaluate:
       - 10
     cv: 10
   SVM:
-    n_estimators: 
+    C:
+      - 0.01
+      - 0.1
+      - 1
       - 10
-      - 20
-      - 40
-    max_depth:
-      - 3
-      - 5
-      - 10
+      - 100
+      - 1000 
+
     cv: 10
   KNN:
     n_neighbors:
@@ -125,7 +125,7 @@ evaluate:
       - 3 
 
 pipeline:
-  dataload: dmg777k
+  dataload: amplus
   preprocess: 
   #  - do_nothing
     - bin_numbers_3
@@ -170,5 +170,5 @@ pipeline_schedule:
     - TransE
     #- RDF2Vec
     - RDF2Vec2
-  iterations: 3
+  iterations: 1
 
