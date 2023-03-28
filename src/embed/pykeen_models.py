@@ -12,19 +12,11 @@ FILEPATH = "data/preprocessed"
 def data_to_pykeen(data):
     if not os.path.exists(f'{FILEPATH}/{data.name}.tsv.gz'):
         print('pykeen file does not exist. Writing pykeen file...')
-        df = pd.DataFrame(columns=["h","r","t"])
-        
-        dfs = []
-        for d in data.triples:
-            dfs.append(pd.DataFrame(
-                [[
-                data.i2e[d[0]][0],
-                data.i2r[d[1]],
-                data.i2e[d[2]][0]
-                ]],
-                columns=["h","r","t"]
-            ))
-        df = pd.concat(dfs,ignore_index=True)
+        print(data.name)
+        df =pd.DataFrame(data.triples, columns=["h","r","t"])
+        df['h'] = df['h'].apply(lambda h:data.i2e[h][0])
+        df['r'] = df['r'].apply(lambda r:data.i2r[r])
+        df['t'] = df['t'].apply(lambda t:data.i2e[t][0])
         df.to_csv(f'{FILEPATH}/{data.name}.tsv.gz', 
                 index=False,
                 sep="\t" ,

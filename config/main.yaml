@@ -44,6 +44,15 @@ preprocess:
     num_bins: 10
   bin_numbers_100:
     num_bins: 100
+  bin_numbers_lof_3:
+    num_bins: 3
+  bin_numbers_lof_10:
+    num_bins: 10
+  bin_numbers_lof_100:
+    num_bins: 100
+  altering_bins:
+    num_bins: 10
+
 
 embed:
   RDF2Vec: 
@@ -53,7 +62,7 @@ embed:
       epochs: 40
     walker_name: RandomWalker
     walker_args:
-      max_depth: 3
+      max_depth: 3 # change to 2
       max_walks: 500
   RDF2Vec2: 
     embedding_name: Word2Vec
@@ -128,7 +137,9 @@ pipeline:
   dataload: amplus
   preprocess: 
   #  - do_nothing
+  
     - bin_numbers_3
+    - delete_number_literals
   #  - delete_all_literals
   #  - delete_number_literals
   #  - bin_numbers2
@@ -145,18 +156,24 @@ pipeline_schedule:
     - mdgenre
   #  - dmg777k
   preprocess:
+    # H1
+    -
+      - delete_all_literals
+    -
+      - do_nothing
+
+    # Baselines
     -
       - one_entity
       - delete_all_literals
     -
-      - bin_numbers2
       - delete_number_literals
-    -
-      - do_nothing
-    -
-      - delete_all_literals
-    -
-      - delete_number_literals
+    #-
+    #  - bin_numbers2
+    #  - delete_number_literals
+
+    # H2
+    # bin
     -
       - bin_numbers_3
       - delete_number_literals
@@ -165,6 +182,26 @@ pipeline_schedule:
       - delete_number_literals
     -
       - bin_numbers_100
+      - delete_number_literals
+    # bin + lof
+    -
+      - bin_numbers_lof_3
+      - delete_number_literals
+    -
+      - bin_numbers_lof_10
+      - delete_number_literals
+    -
+      - bin_numbers_lof_100
+      - delete_number_literals
+    
+    # simmilar paper
+    -
+      - bin_numbers_3
+      - bin_numbers_10
+      - bin_numbers_100
+      - delete_number_literals
+    -
+      - altering_bins
       - delete_number_literals
   embed:
     - TransE

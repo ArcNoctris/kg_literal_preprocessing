@@ -22,8 +22,10 @@ import numpy as np
 from sklearn.neighbors import LocalOutlierFactor
 import datetime
 
-def do_nothing(data:Data,**kwargs):
+
+def do_nothing(data: Data, **kwargs):
     return data
+
 
 def bin_numbers_with_lof(data: Data, num_bins=5):
     relevent_relations = get_relevant_relations(
@@ -90,7 +92,6 @@ def bin_numbers_with_lof(data: Data, num_bins=5):
             data.e2i[(
                 f'https://master-thesis.com/entitys#sanity-check-target-{i}-{e}', 'preprocessed')] = data.num_entities + cumsum + e
 
-
         data.triples = torch.cat((data.triples, new_df), 0)
     data.num_relations += 1
     data.num_entities += num_bins
@@ -98,9 +99,9 @@ def bin_numbers_with_lof(data: Data, num_bins=5):
     return data
 
 
-
-def bin_numbers2(data: Data, num_bins=3,use_lof=True,**kwargs):
-    relevent_relations = get_relevant_relations(data, relevant_types=RDF_NUMBER_TYPES)
+def bin_numbers2(data: Data, num_bins=3, use_lof=True, **kwargs):
+    relevent_relations = get_relevant_relations(
+        data, relevant_types=RDF_NUMBER_TYPES)
 
     i = 0
     cumsum = 0
@@ -108,42 +109,37 @@ def bin_numbers2(data: Data, num_bins=3,use_lof=True,**kwargs):
 
     for rr in relevent_relations:
         df = data.triples.clone()
-        df = df[df[:, 1]== rr]
+        df = df[df[:, 1] == rr]
         sub_df = encode_number_sublist(df, data.i2e)
-        if(use_lof):
+        if (use_lof):
             lof = LocalOutlierFactor(n_neighbors=10)
-            lof.fit(sub_df[:,1].reshape(-1, 1))
+            lof.fit(sub_df[:, 1].reshape(-1, 1))
             outlier_scores = lof.negative_outlier_factor_
 
             # Create a new column in the numpy array to store the outlier scores
-            #tensor_np = torch.hstack((encoded_df, outlier_scores.reshape(-1,1)))
+            # tensor_np = torch.hstack((encoded_df, outlier_scores.reshape(-1,1)))
             threshold = np.percentile(outlier_scores, 10)
             # use the outlier scores to filter out the outliers from the numpy array
             sub_df = sub_df[outlier_scores > threshold]
 
         # numpy is used here since torch.histc was not working for some reason.
-        sub_df = torch.cat( #put bins and sub_df together
-            (sub_df, torch.from_numpy( #get numpy solutions back
-                np.digitize( # assign for each value in sub_df the corresponding bin
-                    sub_df[:, 1], np.histogram( # calculate n bins based on values in sub_df
+        sub_df = torch.cat(  # put bins and sub_df together
+            (sub_df, torch.from_numpy(  # get numpy solutions back
+                np.digitize(  # assign for each value in sub_df the corresponding bin
+                    sub_df[:, 1], np.histogram(  # calculate n bins based on values in sub_df
                         sub_df[:, 1], num_bins)[1]
                 )
-            ).reshape(-1, 1) # transfrom x tensor into (x,1) tensor to fit (x,2) shape of sub_df
+            ).reshape(-1, 1)  # transfrom x tensor into (x,1) tensor to fit (x,2) shape of sub_df
             ), 1)
 
         for row in sub_df:
             s = data.i2e[row[0]]
             p = f'{URI_PREFIX}predicat#binning{rr}'
-            o = (f'{URI_PREFIX}entity#binning{row[2]}',f'{URI_PREFIX}datatype#bin')
-            data = add_triple(data,s,p,o)
+            o = (
+                f'{URI_PREFIX}entity#binning{row[2]}', f'{URI_PREFIX}datatype#bin')
+            data = add_triple(data, s, p, o)
     return data
 
-
-def bin_1(data:Data)->Data:
-    return bin_numbers(data,1)
-
-def remove_outlier():
-    pass
 
 
 def encode_number_sublist(df: torch.Tensor, i2e: List[str]) -> torch.Tensor:
@@ -158,156 +154,217 @@ def encode_number_sublist(df: torch.Tensor, i2e: List[str]) -> torch.Tensor:
 def one_entity(data: Data, **kwargs):
     rr = get_relevant_relations(data, ALL_LITERALS)
     for r in rr:
-        df = data.triples[data.triples[:,1]==r]
+        df = data.triples[data.triples[:, 1] == r]
         new_df = df.clone().detach()
 
         new_df[:, 1] = data.num_relations
         new_df[:, 2] = data.num_entities
 
-        data.i2r.append(f"https://master-thesis.com/relations#one-relation-{r}")
+        data.i2r.append(
+            f"https://master-thesis.com/relations#one-relation-{r}")
         data.r2i[f'https://master-thesis.com/relations#one-relation-{r}'] = data.num_relations
 
         data.i2e.append(
-                (f'https://master-thesis.com/entitys#one-literal-{r}', 'preprocessed'))
+            (f'https://master-thesis.com/entitys#one-literal-{r}', 'preprocessed'))
         data.e2i[(
-                f'https://master-thesis.com/entitys#one-literal-{r}', 'preprocessed')] = data.num_entities
+            f'https://master-thesis.com/entitys#one-literal-{r}', 'preprocessed')] = data.num_entities
 
         data.triples = torch.cat((data.triples, new_df), 0)
         data.num_relations += 1
         data.num_entities += 1
     return data
 
+def delete_empty_bin_types(data: Data, num_bins:int)-> Data:
+    to_delete= []
+    for d in data.i2e[-num_bins:]:
+        filtered = data.triples[data.triples[:,2]==data.e2i[d]]
+        if len(filtered) == 0:
+            to_delete.append(data.e2i[d])
 
-def bin_numbers(data: Data, num_bins=3, use_lof=False, num_bins_as_percent=False, equal_height_binning= False, **kwargs):
-    relevent_relations = get_relevant_relations(data, relevant_types=RDF_NUMBER_TYPES)
-    #print(len(relevent_relations))
-    verbose = 0
-    i = 0
-    cumsum = 0
-    bins = np.arange(num_bins)
-    #print("for rr in relrel")
+    if(len(to_delete)!=0):
+        #to_delete_i = [data.e2i[d] in]
+        print(f"deleting relations {to_delete}, since no occurences are given")
+                #create new e mapping
+        new_e2i = {}
+        new_i2e = []
+
+        for i in range(len(data.i2e)):
+            if i not in to_delete:
+                nt = torch.tensor(len(new_i2e), dtype=torch.int32)
+                it = torch.tensor(i, dtype=torch.int32)
+                new_e2i[data.i2e[it]] = nt
+                new_i2e.append(data.i2e[it])
+                # apply new mapping for triples
+        for t in data.triples:
+            t[0] = new_e2i[data.i2e[t[0]]]
+            #t[1] = torch.tensor(data.r2i[data.i2r[t[1].numpy()]], dtype=torch.int32)
+            t[2] = new_e2i[data.i2e[t[2]]]
+
+            # create new train & withheld
+
+            #update metedata
+        data.num_entities = len(new_i2e)
+
+        data.i2e = new_i2e
+        data.e2i = new_e2i
+        print('done deleteing')
+        print(data.name)
+    return data    
+
+
+def bin_numbers(data: Data, num_bins=3, use_lof=False, num_bins_as_percent=False, equal_height_binning=False, **kwargs):
+    relevent_relations = get_relevant_relations(
+        data, relevant_types=RDF_NUMBER_TYPES)
+    print(num_bins)
     for b in range(num_bins):
-        o = (f'{URI_PREFIX}entity#binning{b+1}',f'{URI_PREFIX}datatype#bin')
+        o = (f'{URI_PREFIX}entity#binning{b+1}', f'{URI_PREFIX}datatype#bin')
         new_id = len(data.i2e)
         data.e2i[o] = new_id
         data.i2e.append(o)
         data.num_entities += 1
-        if (verbose > 0):
-            print(f'created new entity:')
-            print(f'{data.e2i[o]} - {o}')
+
     for r in relevent_relations:
         p = f'{URI_PREFIX}predicat#binning{r}'
         new_id = len(data.i2r)
         data.r2i[p] = new_id
         data.i2r.append(p)
         data.num_relations += 1
-        if (verbose > 0):
-            print(f'created new relation:')
-            print(f'{data.r2i[p]} - {p}')
 
-    #si = data.e2i[s]
-    #pi = data.r2i[p]
-    #oi = data.e2i[o]
+    for relation in relevent_relations:
 
-    for rr in relevent_relations:
-        #print(rr)
-        #print(datetime.time())
-        df = data.triples.clone()
-        df = df[df[:, 1]== rr]
-        sub_df = encode_number_sublist(df, data.i2e)
-        #print("sub2")
-        if(use_lof):
+        sub_df = encode_number_sublist(
+            data.triples[data.triples[:, 1] == relation], data.i2e)
+
+        # TODO test new function
+        if (use_lof):
             lof = LocalOutlierFactor(n_neighbors=10)
-            lof.fit(sub_df[:,1].reshape(-1, 1))
+            lof.fit(sub_df[:, 1].reshape(-1, 1))
             outlier_scores = lof.negative_outlier_factor_
-
             # Create a new column in the numpy array to store the outlier scores
-            #tensor_np = torch.hstack((encoded_df, outlier_scores.reshape(-1,1)))
+            # tensor_np = torch.hstack((encoded_df, outlier_scores.reshape(-1,1)))
             threshold = np.percentile(outlier_scores, 10)
             # use the outlier scores to filter out the outliers from the numpy array
             sub_df = sub_df[outlier_scores > threshold]
 
         # numpy is used here since torch.histc was not working for some reason.
-        sub_df = torch.cat( #put bins and sub_df together
-            (sub_df, torch.from_numpy( #get numpy solutions back
-                np.digitize( # assign for each value in sub_df the corresponding bin
-                    sub_df[:, 1], np.histogram( # calculate n bins based on values in sub_df
+        sub_df = torch.cat(  # put bins and sub_df together
+            (sub_df, torch.from_numpy(  # get numpy solutions back
+                np.digitize(  # assign for each value in sub_df the corresponding bin
+                    sub_df[:, 1], np.histogram(  # calculate n bins based on values in sub_df
                         sub_df[:, 1], num_bins)[1][:-1]
                 )
-            ).reshape(-1, 1) # transfrom x tensor into (x,1) tensor to fit (x,2) shape of sub_df
+            ).reshape(-1, 1)  # transfrom x tensor into (x,1) tensor to fit (x,2) shape of sub_df
             ), 1)
-        
-        ofn = lambda t: data.e2i[(f'{URI_PREFIX}entity#binning{t}',f'{URI_PREFIX}datatype#bin')]
-        vofn = np.vectorize(ofn)
-        pfn = lambda t: data.r2i[f'{URI_PREFIX}predicat#binning{rr}']
-        vpfn = np.vectorize(pfn)
-        to_add_df = sub_df.clone()
-        #print(len(to_add_df))
-        #print(sub_df[:,2])
-        #print("aaa")
-        to_add_df[:,1]= torch.tensor([vpfn(sub_df[:,2])], dtype=torch.int32)
-        to_add_df[:,2]= torch.tensor([vofn(sub_df[:,2])],dtype=torch.int32)
-        data.triples = torch.cat((data.triples, to_add_df), 0)
-        # print('eee')
-        # print(num_bins)
-        # print(torch.unique(sub_df[:,2]))
-        # print("suib")
-        
 
-        # print("sub3")
-        # print(len(sub_df))
-        # print(datetime.time())
-        # #use here the dataframe trick
-        # df = pd.DataFrame(columns=["s","p","o"])
-        
-        # dfs = []
+        object_mapping = np.vectorize(lambda t: data.e2i[(
+            f'{URI_PREFIX}entity#binning{t}', f'{URI_PREFIX}datatype#bin')])
 
-        # for row in sub_df:
+        predicat_mapping = np.vectorize(
+            lambda t: data.r2i[f'{URI_PREFIX}predicat#binning{relation}'])
 
-        #     #results = np.loadtxt(f'data/predicted/{entry}', dtype=np.int32, delimiter=',')
-    
-        #     dfs.append(pd.DataFrame(
-        #         [[
-        #             data.i2e[row[0]],
-        #             f'{URI_PREFIX}predicat#binning{rr}',
-        #             (f'{URI_PREFIX}entity#binning{row[2]}',f'{URI_PREFIX}datatype#bin'),
-        #         ]],
-        #         columns=["s","p","o"]
-        #     ))
-
-        # df = pd.concat(dfs,ignore_index=True)
-        # print("sub33")
-        # print(len(sub_df))
-        # print(datetime.time())
-        # print(df['p'].unique())
-
-        # for j in range(len(sub_df)):
-        #     if j%100==0:
-        #         print(j)
-        #     row = sub_df[j]
-        #     #s = data.i2e[row[0]]
-        #     pi = data.r2i[f'{URI_PREFIX}predicat#binning{rr}']
-        #     oi = data.e2i[(f'{URI_PREFIX}entity#binning{row[2]}',f'{URI_PREFIX}datatype#bin')]
-        #     new_triple = torch.tensor([[row[0], pi, oi]], dtype=torch.int32)
-        #     data.triples = torch.cat((data.triples, new_triple), 0)
-        #     #data = add_triple(data,s,p,o)
-        # print("sub4")
+        sub_df[:, 1] = torch.tensor([predicat_mapping(sub_df[:, 2])], dtype=torch.int32)
+        sub_df[:, 2] = torch.tensor([object_mapping(sub_df[:, 2])], dtype=torch.int32)
+        data.triples = torch.cat((data.triples, sub_df), 0)
+    data = delete_empty_bin_types(data,num_bins)
     return data
 
-def bin_numbers_3(data:Data,**kwargs):
-    return bin_numbers(data= data, num_bins= 3, use_lof = False)
 
-def bin_numbers_10(data:Data,**kwargs):
-    return bin_numbers(data= data, num_bins= 10, use_lof = False)
+def bin_numbers_3(data: Data, **kwargs):
+    return bin_numbers(data=data, num_bins=3, use_lof=False)
 
-def bin_numbers_100(data:Data,**kwargs):
-    return bin_numbers(data= data, num_bins= 100, use_lof = False)
 
-def bin_numbers_lof_3(data:Data,**kwargs):
-    return bin_numbers(data= data, num_bins= 3, use_lof = True)
+def bin_numbers_10(data: Data, **kwargs):
+    return bin_numbers(data=data, num_bins=10, use_lof=False)
 
-def bin_numbers_lof_10(data:Data,**kwargs):
-    return bin_numbers(data= data, num_bins= 10, use_lof = True)
 
-def bin_numbers_lof_100(data:Data,**kwargs):
-    return bin_numbers(data= data, num_bins= 100, use_lof = True)
+def bin_numbers_100(data: Data, **kwargs):
+    return bin_numbers(data=data, num_bins=100, use_lof=False)
+
+
+def bin_numbers_lof_3(data: Data, **kwargs):
+    return bin_numbers(data=data, num_bins=3, use_lof=True)
+
+
+def bin_numbers_lof_10(data: Data, **kwargs):
+    return bin_numbers(data=data, num_bins=10, use_lof=True)
+
+
+def bin_numbers_lof_100(data: Data, **kwargs):
+    return bin_numbers(data=data, num_bins=100, use_lof=True)
+
+
+
+def altering_bins(data: Data, num_bins=3, **kwargs):
+    relevent_relations = get_relevant_relations(
+        data, relevant_types=RDF_NUMBER_TYPES)
+
+    for b in range(num_bins):
+        o = (f'{URI_PREFIX}entity#binning{b+1}#1', f'{URI_PREFIX}datatype#bin')
+        new_id = len(data.i2e)
+        data.e2i[o] = new_id
+        data.i2e.append(o)
+        data.num_entities += 1
+
+        o = (f'{URI_PREFIX}entity#binning{b+1}#2', f'{URI_PREFIX}datatype#bin')
+        new_id = len(data.i2e)
+        data.e2i[o] = new_id
+        data.i2e.append(o)
+        data.num_entities += 1
+
+    for r in relevent_relations:
+        p = f'{URI_PREFIX}predicat#binning{r}#1'
+        new_id = len(data.i2r)
+        data.r2i[p] = new_id
+        data.i2r.append(p)
+        data.num_relations += 1
+        p = f'{URI_PREFIX}predicat#binning{r}#2'
+        new_id = len(data.i2r)
+        data.r2i[p] = new_id
+        data.i2r.append(p)
+        data.num_relations += 1
+
+    for relation in relevent_relations:
+
+        sub_df1 = encode_number_sublist(
+            data.triples[data.triples[:, 1] == relation], data.i2e)
+        sub_df2 = encode_number_sublist(
+            data.triples[data.triples[:, 1] == relation], data.i2e)
+
+        # numpy is used here since torch.histc was not working for some reason.
+        sub_df1 = torch.cat(  # put bins and sub_df together
+            (sub_df1, torch.from_numpy(  # get numpy solutions back
+                np.digitize(  # assign for each value in sub_df the corresponding bin
+                    sub_df1[:, 1], np.histogram(  # calculate n bins based on values in sub_df
+                        sub_df1[:, 1], num_bins*2)[1][:-1:2]
+                )
+            ).reshape(-1, 1)  # transfrom x tensor into (x,1) tensor to fit (x,2) shape of sub_df
+            ), 1)
+        sub_df2 = torch.cat(  # put bins and sub_df together
+            (sub_df2, torch.from_numpy(  # get numpy solutions back
+                np.digitize(  # assign for each value in sub_df the corresponding bin
+                    sub_df2[:, 1], np.histogram(  # calculate n bins based on values in sub_df
+                        sub_df2[:, 1], num_bins*2)[1][1:-1:2]
+                )
+            ).reshape(-1, 1)  # transfrom x tensor into (x,1) tensor to fit (x,2) shape of sub_df
+            ), 1)
+
+        object_mapping1 = np.vectorize(lambda t: data.e2i[(
+            f'{URI_PREFIX}entity#binning{t}#1', f'{URI_PREFIX}datatype#bin')])
+
+        predicat_mapping1 = np.vectorize(
+            lambda t: data.r2i[f'{URI_PREFIX}predicat#binning{relation}#1'])
+
+        sub_df1[:, 1] = torch.tensor([predicat_mapping1(sub_df1[:, 2])], dtype=torch.int32)
+        sub_df1[:, 2] = torch.tensor([object_mapping1(sub_df1[:, 2])], dtype=torch.int32)
+        data.triples = torch.cat((data.triples, sub_df1), 0)
+
+        object_mapping2 = np.vectorize(lambda t: data.e2i[(
+            f'{URI_PREFIX}entity#binning{t}#2', f'{URI_PREFIX}datatype#bin')])
+
+        predicat_mapping2 = np.vectorize(
+            lambda t: data.r2i[f'{URI_PREFIX}predicat#binning{relation}#2'])
+
+        sub_df2[:, 1] = torch.tensor([predicat_mapping2(sub_df2[:, 2])], dtype=torch.int32)
+        sub_df2[:, 2] = torch.tensor([object_mapping2(sub_df2[:, 2])], dtype=torch.int32)
+        data.triples = torch.cat((data.triples, sub_df2), 0)
+    return data
