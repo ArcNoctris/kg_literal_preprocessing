@@ -26,9 +26,13 @@ dataload:
 preprocess:
   bin_numbers2:
     num_bins: 10
+  simplistic_approach:
+    classify: 1
   append_weekday_and_month:
     neighborhood: 1
   delete_number_literals:
+    neighborhood: 1
+  delete_text_literals:
     neighborhood: 1
   do_nothing:
     nothingness: true
@@ -50,9 +54,43 @@ preprocess:
     num_bins: 10
   bin_numbers_lof_100:
     num_bins: 100
+  bin_numbers_hierarchically_3_10_100:
+    list_num_bins:
+      - 3
+      - 10
+      - 100
   altering_bins:
     num_bins: 10
 
+  subpopulation_binning:
+    num_bins: 10
+  subpopulation_binning_lof_100:
+    num_bins: 100
+  subpopulation_binning_lof_10:
+    num_bins: 10
+  subpopulation_binning_10:
+    num_bins: 10
+  bound_subpopulation_binning_lof_10:
+    num_bins: 10
+  bound_subpopulation_binning_lof_100:
+    num_bins: 10
+  bound_subpopulation_binning_10:
+    num_bins: 10
+  bin_numbers_percentage_3:
+    num_bins: 3
+  bin_numbers_percentage_5:
+    num_bins: 5
+  bin_numbers_percentage_15:
+    num_bins: 15
+  bin_numbers_lof_percentage_3:
+    num_bins: 3
+  bin_numbers_lof_percentage_5:
+    num_bins: 5
+  bin_numbers_lof_percentage_15:
+    num_bins: 15
+  LDA_topic_assignment:
+    num_topics: 10
+    max_assigned_topic: 3
 
 embed:
   RDF2Vec: 
@@ -134,16 +172,19 @@ evaluate:
       - 3 
 
 pipeline:
-  dataload: amplus
+  dataload: dmg777k
   preprocess: 
   #  - do_nothing
-  
-    - bin_numbers_3
-    - delete_number_literals
+
+    #- subpopulation_binning_lof_10
+
+    # - bin_numbers_3
+    - LDA_topic_assignment
+    - delete_text_literals
   #  - delete_all_literals
   #  - delete_number_literals
   #  - bin_numbers2
-  embed: TransE
+  embed: RDF2Vec2
   evaluate: 
     - SVM
     - KNN
@@ -151,23 +192,31 @@ pipeline:
 
 pipeline_schedule:
   dataload:
-    - amplus
     - dmg777k
+    - amplus
     - mdgenre
   #  - dmg777k
   preprocess:
     # H1
     -
       - delete_all_literals
+    # -
+    #   - do_nothing
     -
-      - do_nothing
+      - simplistic_approach
 
+    -
+      - LDA_topic_assignment
+      - delete_text_literals
     # Baselines
     -
       - one_entity
       - delete_all_literals
     -
       - delete_number_literals
+
+    -
+      - delete_text_literals
     #-
     #  - bin_numbers2
     #  - delete_number_literals
@@ -175,8 +224,8 @@ pipeline_schedule:
     # H2
     # bin
     -
-      - bin_numbers_3
-      - delete_number_literals
+     - bin_numbers_3
+     - delete_number_literals
     -
       - bin_numbers_10
       - delete_number_literals
@@ -193,16 +242,73 @@ pipeline_schedule:
     -
       - bin_numbers_lof_100
       - delete_number_literals
+
+    # percentage binning
+    -
+      - bin_numbers_lof_percentage_3
+      - delete_number_literals
+    -
+      - bin_numbers_lof_percentage_5
+      - delete_number_literals
+    -
+      - bin_numbers_lof_percentage_15
+      - delete_number_literals
+    -
+      - bin_numbers_percentage_3
+      - delete_number_literals
+    -
+      - bin_numbers_percentage_5
+      - delete_number_literals
+    -
+      - bin_numbers_percentage_15
+      - delete_number_literals
     
     # simmilar paper
     -
-      - bin_numbers_3
-      - bin_numbers_10
-      - bin_numbers_100
+      - bin_numbers_hierarchically_3_10_100
+      - delete_number_literals
+    # -
+    #   - altering_bins
+    #   - delete_number_literals
+    -
+      - subpopulation_binning_lof_10
       - delete_number_literals
     -
-      - altering_bins
+      - subpopulation_binning_lof_100
       - delete_number_literals
+    -
+      - bound_subpopulation_binning_lof_10
+      - delete_number_literals
+    -
+      - bound_subpopulation_binning_lof_100
+      - delete_number_literals
+
+    #LDA
+    # -
+    #   - LDA_topic_assignment
+    #   - delete_text_literals
+
+    # bin & simple
+    -
+      - subpopulation_binning_lof_10
+      - simplistic_approach
+    -
+      - bin_numbers_percentage_3
+      - simplistic_approach
+    -
+      - bin_numbers_lof_percentage_3
+      - simplistic_approach
+    -
+      - one_entity
+      - simplistic_approach
+    -
+      - bin_numbers_lof_10
+      - simplistic_approach
+    -
+      - bin_numbers_hierarchically_3_10_100
+      - simplistic_approach
+
+
   embed:
     - TransE
     #- RDF2Vec

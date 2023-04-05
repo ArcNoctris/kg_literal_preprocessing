@@ -64,3 +64,10 @@ ALL_BUT_NUMBER = [
     'http://www.w3.org/2001/XMLSchema#date',
     'http://www.w3.org/2001/XMLSchema#dateTime',
     'http://www.w3.org/2001/XMLSchema#string']
+
+POTENTIAL_TEXT_TYPES = [
+    '@es', '@fy', '@nl', '@nl-nl', '@pt', '@ru',
+    'http://www.w3.org/1999/02/22-rdf-syntax-ns#langString',
+    'http://www.w3.org/2001/XMLSchema#string',
+    'none'
+]

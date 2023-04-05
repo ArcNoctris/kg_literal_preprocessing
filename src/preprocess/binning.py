@@ -2,6 +2,7 @@ import fire
 import sys
 import tqdm
 import pandas as pd
+import math
 import numpy as np
 import kgbench as kg
 from collections import Counter
@@ -25,7 +26,8 @@ import datetime
 
 def do_nothing(data: Data, **kwargs):
     return data
-
+def simplistic_approach(data: Data, **kwargs):
+    return data
 
 def bin_numbers_with_lof(data: Data, num_bins=5):
     relevent_relations = get_relevant_relations(
@@ -262,8 +264,8 @@ def bin_numbers(data: Data, num_bins=3, use_lof=False, num_bins_as_percent=False
         predicat_mapping = np.vectorize(
             lambda t: data.r2i[f'{URI_PREFIX}predicat#binning{relation}'])
 
-        sub_df[:, 1] = torch.tensor([predicat_mapping(sub_df[:, 2])], dtype=torch.int32)
-        sub_df[:, 2] = torch.tensor([object_mapping(sub_df[:, 2])], dtype=torch.int32)
+        sub_df[:, 1] = torch.tensor(np.array([predicat_mapping(sub_df[:, 2])]), dtype=torch.int32)
+        sub_df[:, 2] = torch.tensor(np.array([object_mapping(sub_df[:, 2])]), dtype=torch.int32)
         data.triples = torch.cat((data.triples, sub_df), 0)
     data = delete_empty_bin_types(data,num_bins)
     return data
@@ -292,7 +294,66 @@ def bin_numbers_lof_10(data: Data, **kwargs):
 def bin_numbers_lof_100(data: Data, **kwargs):
     return bin_numbers(data=data, num_bins=100, use_lof=True)
 
+def bin_numbers_hierarchically(data, list_num_bins=[3,10,100], **kwargs):
+    relevent_relations = get_relevant_relations(
+        data, relevant_types=RDF_NUMBER_TYPES)
+    #print(num_bins)
+    for num_bins in list_num_bins:
+        for b in range(num_bins):
+            o = (f'{URI_PREFIX}entity#binning{b+1}#num_bins{num_bins}', f'{URI_PREFIX}datatype#bin')
+            new_id = len(data.i2e)
+            data.e2i[o] = new_id
+            data.i2e.append(o)
+            data.num_entities += 1
 
+    for num_bins in list_num_bins:
+        for r in relevent_relations:
+            p = f'{URI_PREFIX}predicat#binning{r}#num_bins{num_bins}'
+            new_id = len(data.i2r)
+            data.r2i[p] = new_id
+            data.i2r.append(p)
+            data.num_relations += 1
+    for num_bins in list_num_bins:
+        for relation in relevent_relations:
+
+            sub_df = encode_number_sublist(
+                data.triples[data.triples[:, 1] == relation], data.i2e)
+
+        # # TODO test new function
+        # if (use_lof):
+        #     lof = LocalOutlierFactor(n_neighbors=10)
+        #     lof.fit(sub_df[:, 1].reshape(-1, 1))
+        #     outlier_scores = lof.negative_outlier_factor_
+        #     # Create a new column in the numpy array to store the outlier scores
+        #     # tensor_np = torch.hstack((encoded_df, outlier_scores.reshape(-1,1)))
+        #     threshold = np.percentile(outlier_scores, 10)
+        #     # use the outlier scores to filter out the outliers from the numpy array
+        #     sub_df = sub_df[outlier_scores > threshold]
+
+            # numpy is used here since torch.histc was not working for some reason.
+            sub_df = torch.cat(  # put bins and sub_df together
+                (sub_df, torch.from_numpy(  # get numpy solutions back
+                    np.digitize(  # assign for each value in sub_df the corresponding bin
+                        sub_df[:, 1], np.histogram(  # calculate n bins based on values in sub_df
+                            sub_df[:, 1], num_bins)[1][:-1]
+                    )
+                ).reshape(-1, 1)  # transfrom x tensor into (x,1) tensor to fit (x,2) shape of sub_df
+                ), 1)
+
+            object_mapping = np.vectorize(lambda t: data.e2i[(
+                f'{URI_PREFIX}entity#binning{t}#num_bins{num_bins}', f'{URI_PREFIX}datatype#bin')])
+
+            predicat_mapping = np.vectorize(
+                lambda t: data.r2i[f'{URI_PREFIX}predicat#binning{relation}#num_bins{num_bins}'])
+
+            sub_df[:, 1] = torch.tensor(np.array([predicat_mapping(sub_df[:, 2])]), dtype=torch.int32)
+            sub_df[:, 2] = torch.tensor(np.array([object_mapping(sub_df[:, 2])]), dtype=torch.int32)
+            data.triples = torch.cat((data.triples, sub_df), 0)
+    data = delete_empty_bin_types(data,np.sum(list_num_bins))
+    return data
+
+def bin_numbers_hierarchically_3_10_100(data, list_num_bins=[3,10,100], **kwargs):
+    return bin_numbers_hierarchically(data, list_num_bins=list_num_bins)
 
 def altering_bins(data: Data, num_bins=3, **kwargs):
     relevent_relations = get_relevant_relations(
@@ -305,7 +366,7 @@ def altering_bins(data: Data, num_bins=3, **kwargs):
         data.i2e.append(o)
         data.num_entities += 1
 
-        o = (f'{URI_PREFIX}entity#binning{b+1}#2', f'{URI_PREFIX}datatype#bin')
+        o = (f'{URI_PREFIX}entity#binning{b}#2', f'{URI_PREFIX}datatype#bin')
         new_id = len(data.i2e)
         data.e2i[o] = new_id
         data.i2e.append(o)
@@ -360,11 +421,112 @@ def altering_bins(data: Data, num_bins=3, **kwargs):
 
         object_mapping2 = np.vectorize(lambda t: data.e2i[(
             f'{URI_PREFIX}entity#binning{t}#2', f'{URI_PREFIX}datatype#bin')])
+        
+        bin_upper_bound = np.vectorize(lambda t: num_bins-1 if t>=num_bins else t)
 
         predicat_mapping2 = np.vectorize(
             lambda t: data.r2i[f'{URI_PREFIX}predicat#binning{relation}#2'])
 
         sub_df2[:, 1] = torch.tensor([predicat_mapping2(sub_df2[:, 2])], dtype=torch.int32)
+        sub_df2[:, 2] = torch.tensor([bin_upper_bound(sub_df2[:, 2])], dtype=torch.int32)
         sub_df2[:, 2] = torch.tensor([object_mapping2(sub_df2[:, 2])], dtype=torch.int32)
+        
         data.triples = torch.cat((data.triples, sub_df2), 0)
+        data = delete_empty_bin_types(data,num_bins*2)
     return data
+
+
+
+def bin_numbers_percentage(data: Data, num_bins=3, use_lof=False, num_bins_as_percent=False, equal_height_binning=False, **kwargs):
+    relevent_relations = get_relevant_relations(
+        data, relevant_types=RDF_NUMBER_TYPES)
+    percent_of_objects = num_bins/100
+    
+    relation_bin_map = {}
+
+    for relation in relevent_relations:
+        if num_bins_as_percent:
+            sub_df = encode_number_sublist(
+            data.triples[data.triples[:, 1] == relation], data.i2e)
+            relation_bin_map[relation] = math.floor(len(sub_df[:,1].unique())*percent_of_objects)
+        else:
+            relation_bin_map[relation] = num_bins
+    max_bin = max([x for x in relation_bin_map.values()])
+    num_bins = max_bin
+    print(f'max_bin_number')
+
+
+    print(num_bins)
+    for b in range(num_bins):
+        o = (f'{URI_PREFIX}entity#binning{b+1}', f'{URI_PREFIX}datatype#bin')
+        new_id = len(data.i2e)
+        data.e2i[o] = new_id
+        data.i2e.append(o)
+        data.num_entities += 1
+
+    for r in relevent_relations:
+        p = f'{URI_PREFIX}predicat#binning{r}'
+        new_id = len(data.i2r)
+        data.r2i[p] = new_id
+        data.i2r.append(p)
+        data.num_relations += 1
+
+    for relation in relevent_relations:
+
+        sub_df = encode_number_sublist(
+            data.triples[data.triples[:, 1] == relation], data.i2e)
+
+        # TODO test new function
+        if (use_lof):
+            lof = LocalOutlierFactor(n_neighbors=10)
+            lof.fit(sub_df[:, 1].reshape(-1, 1))
+            outlier_scores = lof.negative_outlier_factor_
+            # Create a new column in the numpy array to store the outlier scores
+            # tensor_np = torch.hstack((encoded_df, outlier_scores.reshape(-1,1)))
+            threshold = np.percentile(outlier_scores, 10)
+            # use the outlier scores to filter out the outliers from the numpy array
+            sub_df = sub_df[outlier_scores > threshold]
+
+        if(num_bins_as_percent):
+            num_bins = math.floor(len(sub_df[:,1].unique())*percent_of_objects)
+            print(f'percentage based bins {percent_of_objects*100}% of unique literals results in {num_bins} bins')
+
+        # numpy is used here since torch.histc was not working for some reason.
+        sub_df = torch.cat(  # put bins and sub_df together
+            (sub_df, torch.from_numpy(  # get numpy solutions back
+                np.digitize(  # assign for each value in sub_df the corresponding bin
+                    sub_df[:, 1], np.histogram(  # calculate n bins based on values in sub_df
+                        sub_df[:, 1], num_bins)[1][:-1]
+                )
+            ).reshape(-1, 1)  # transfrom x tensor into (x,1) tensor to fit (x,2) shape of sub_df
+            ), 1)
+
+        object_mapping = np.vectorize(lambda t: data.e2i[(
+            f'{URI_PREFIX}entity#binning{t}', f'{URI_PREFIX}datatype#bin')])
+
+        predicat_mapping = np.vectorize(
+            lambda t: data.r2i[f'{URI_PREFIX}predicat#binning{relation}'])
+
+        sub_df[:, 1] = torch.tensor(np.array([predicat_mapping(sub_df[:, 2])]), dtype=torch.int32)
+        sub_df[:, 2] = torch.tensor(np.array([object_mapping(sub_df[:, 2])]), dtype=torch.int32)
+        data.triples = torch.cat((data.triples, sub_df), 0)
+    data = delete_empty_bin_types(data,max_bin)
+    return data
+
+def bin_numbers_percentage_3(data, **kwargs):
+    return bin_numbers_percentage(data,  3,False,True,False)
+
+def bin_numbers_percentage_5(data, **kwargs):
+    return bin_numbers_percentage(data,  5,False,True,False)
+
+def bin_numbers_percentage_15(data, **kwargs):
+    return bin_numbers_percentage(data,  15,False,True,False)
+
+def bin_numbers_lof_percentage_3(data, **kwargs):
+    return bin_numbers_percentage(data,  3,True,True,False)
+
+def bin_numbers_lof_percentage_5(data, **kwargs):
+    return bin_numbers_percentage(data,  5,True,True,False)
+
+def bin_numbers_lof_percentage_15(data, **kwargs):
+    return bin_numbers_percentage(data,  15,True,True,False)

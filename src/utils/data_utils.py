@@ -22,7 +22,64 @@ def update_dataset_name(data: Data, preprocess_args, preprocess_steps) -> Data:
 
     
 
+def ensure_data_symmetry(data: Data)-> Data:
+    # REMAP to symmetric relations a <-> b
+    #maped_data = data.triples.copy
+    for t in data.triples:
+        t[0] = torch.tensor(data.e2i[data.i2e[t[0]]], dtype=torch.int32)
+        t[1] = torch.tensor(data.r2i[data.i2r[t[1]]], dtype=torch.int32)
+        t[2] = torch.tensor(data.e2i[data.i2e[t[2]]], dtype=torch.int32)
 
+    for t in data.training:
+        t[0] = torch.tensor(data.e2i[data.i2e[t[0]]])
+
+    for t in data.withheld:
+        t[0] = torch.tensor(data.e2i[data.i2e[t[0]]])
+    base_e_unique = torch.unique(torch.cat([data.triples[:,0],data.triples[:,2]])) 
+    base_r_unique = torch.unique(data.triples[:,1])
+
+    new_e2i = {}
+    new_i2e = []
+
+    # TODO filter problem possibly here?!?! todo tomorrow
+    
+    for i in range(len(data.i2e)):
+        if i in base_e_unique.numpy():
+        #print("here")
+            new_e2i[data.i2e[i]] = len(new_i2e)
+            new_i2e.append(data.i2e[i])
+
+    #create new r mapping
+    new_r2i = {}
+    new_i2r = []
+
+    for i in range(len(data.i2r)):
+        if i in base_r_unique.numpy():
+            new_r2i[data.i2r[i]] = len(new_i2r)
+            new_i2r.append(data.i2r[i])
+
+    for t in data.triples:
+        t[0] = torch.tensor(new_e2i[data.i2e[t[0]]], dtype=torch.int32)
+        t[1] = torch.tensor(new_r2i[data.i2r[t[1]]], dtype=torch.int32)
+        t[2] = torch.tensor(new_e2i[data.i2e[t[2]]], dtype=torch.int32)
+
+    for t in data.training:
+        t[0] = torch.tensor(new_e2i[data.i2e[t[0]]])
+
+    for t in data.withheld:
+        t[0] = torch.tensor(new_e2i[data.i2e[t[0]]])
+
+    #update metedata
+    data.num_entities = len(new_i2e)
+    data.num_relations = len(new_i2r)
+
+    #     #update data
+    #data.triples = filtered
+    data.i2e = new_i2e
+    data.e2i = new_e2i
+    data.i2r = new_i2r
+    data.r2i = new_r2i
+    return data
 
 
 def extract_ents(data: Data):
@@ -209,6 +266,9 @@ def delete_r(data:Data, r):
     new_e2i = {}
     new_i2e = []
 
+
+    # TODO filter problem possibly here?!?! todo tomorrow
+    
     for i in range(len(data.i2e)):
         if i not in neg_e_filter.numpy():
             new_e2i[data.i2e[i]] = len(new_i2e)
@@ -225,9 +285,12 @@ def delete_r(data:Data, r):
 
     # apply new mapping for triples
     for t in filtered:
-        t[0] = torch.tensor(new_e2i[data.i2e[t[0].numpy()]], dtype=torch.int32)
-        t[1] = torch.tensor(new_r2i[data.i2r[t[1].numpy()]], dtype=torch.int32)
-        t[2] = torch.tensor(new_e2i[data.i2e[t[2].numpy()]], dtype=torch.int32)
+        t[0] = new_e2i[data.i2e[t[0]]]
+        t[1] = new_r2i[data.i2r[t[1]]]
+        t[2] = new_e2i[data.i2e[t[2]]]
+        #t[0] = torch.tensor(new_e2i[data.i2e[t[0].numpy()]], dtype=torch.int32)
+        #t[1] = torch.tensor(new_r2i[data.i2r[t[1].numpy()]], dtype=torch.int32)
+        #t[2] = torch.tensor(new_e2i[data.i2e[t[2].numpy()]], dtype=torch.int32)
 
     # create new train & withheld
     new_train =  []

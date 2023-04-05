@@ -3,7 +3,7 @@ import hydra
 import dataload
 import embed
 import evaluate
-from utils.data_utils import data_to_kg, extract_ents, update_dataset_name
+from utils.data_utils import data_to_kg, extract_ents, update_dataset_name, ensure_data_symmetry
 import preprocess
 from sklearn.metrics import accuracy_score, confusion_matrix, f1_score
 import logging
@@ -22,7 +22,10 @@ def process(cfg: DictConfig) -> None:
     data.name = cfg["pipeline"]["dataload"]
     data = update_dataset_name(
         data, cfg["preprocess"], cfg["pipeline"]["preprocess"])
-
+    
+    log.info("ensure data symmetry")
+    data = ensure_data_symmetry(data)
+    
     log.info("Preprocess started...")
     for step in cfg["pipeline"]["preprocess"]:
         log.info(f"Processing step {step}...")
