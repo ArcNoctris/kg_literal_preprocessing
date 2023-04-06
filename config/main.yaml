@@ -40,6 +40,14 @@ preprocess:
     neighborhood: 1
   delete_all_but_numbers:
     neighborhood: 1
+  delete_none_literals:
+    neighborhood: 1
+  delete_geo_literals:
+    neighborhood: 1
+  delete_image_literals:
+    neighborhood: 1
+  delete_date_literals:
+    neighborhood: 1
   one_entity:
     num_bins: 1
   bin_numbers_3:
@@ -217,9 +225,13 @@ pipeline_schedule:
     -
       - delete_text_literals
     -
-      - delete_text_literals
+      - delete_none_literals
     -
       - delete_geo_literals
+    -
+      - delete_image_literals
+    -
+      - delete_date_literals
     #-
     #  - bin_numbers2
     #  - delete_number_literals
