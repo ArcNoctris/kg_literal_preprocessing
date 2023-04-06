@@ -17,7 +17,7 @@ from typing import List, Sequence, Tuple
 from kgbench import load, tic, toc, d
 import numpy as np
 from sklearn.neighbors import LocalOutlierFactor
-from utils import URI_PREFIX,POTENTIAL_TEXT_TYPES
+from utils import URI_PREFIX,POTENTIAL_TEXT_TYPES, RDF_DATE_TYPES, IMAGE_TYPES, GEO_TYPES, NONE_TYPES
 import numpy as np
 from sklearn.neighbors import LocalOutlierFactor
 from utils import delete_r
@@ -33,6 +33,22 @@ def delete_all_literals(data:Data, **kwargs)-> Data:
 
 def delete_all_but_numbers(data:Data, **kwargs) -> Data:
     rr = get_relevant_relations(data,ALL_BUT_NUMBER)
+    return delete_r(data, torch.tensor(rr))
+
+def delete_date_literals(data:Data, **kwargs) -> Data:
+    rr = get_relevant_relations(data,RDF_DATE_TYPES)
+    return delete_r(data, torch.tensor(rr))
+
+def delete_image_literals(data:Data, **kwargs) -> Data:
+    rr = get_relevant_relations(data,IMAGE_TYPES)
+    return delete_r(data, torch.tensor(rr))
+
+def delete_geo_literals(data:Data, **kwargs) -> Data:
+    rr = get_relevant_relations(data,GEO_TYPES)
+    return delete_r(data, torch.tensor(rr))
+
+def delete_none_literals(data:Data, **kwargs) -> Data:
+    rr = get_relevant_relations(data,POTENTIAL_TEXT_TYPES)
     return delete_r(data, torch.tensor(rr))
 
 def delete_text_literals(data:Data, **kwargs) -> Data:

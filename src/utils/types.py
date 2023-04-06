@@ -39,6 +39,14 @@ IMAGE_TYPES = [
     'http://kgbench.info/dt#base64Image'
 ]
 
+GEO_TYPES = [
+    'http://www.opengis.net/ont/geosparql#wktLiteral'
+]
+
+NONE_TYPES =[ 
+    'none'
+]
+
 ALL_LITERALS = [
     '@es', '@fy', '@nl', '@nl-nl', '@pt', '@ru',
     'http://kgbench.info/dt#base64Image',

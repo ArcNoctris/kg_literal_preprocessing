@@ -214,9 +214,12 @@ pipeline_schedule:
       - delete_all_literals
     -
       - delete_number_literals
-
     -
       - delete_text_literals
+    -
+      - delete_text_literals
+    -
+      - delete_geo_literals
     #-
     #  - bin_numbers2
     #  - delete_number_literals
