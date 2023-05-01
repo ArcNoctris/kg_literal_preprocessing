@@ -63,7 +63,10 @@ def process(cfg: DictConfig) -> None:
             **cfg["evaluate"][m])
         model.fit(train_embeddings, train_target)
         models[m] = model
-
+        
+    if embeddings.dtype == "complex64":
+        train_embeddings = train_embeddings.real
+        test_embeddings = test_embeddings.real
     log.info("Evaluation started...")
     # TODO save into file to analyze in subsequent stages (also with _0,_1 and so on)
     # prio 1.1

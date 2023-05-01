@@ -530,3 +530,215 @@ def bin_numbers_lof_percentage_5(data, **kwargs):
 
 def bin_numbers_lof_percentage_15(data, **kwargs):
     return bin_numbers_percentage(data,  15,True,True,False)
+
+
+def bin_numbers_v3(data: Data, num_bins=3, use_lof=False, num_bins_as_percent=False, equal_height_binning=False, **kwargs):
+    relevent_relations = get_relevant_relations(
+        data, relevant_types=RDF_NUMBER_TYPES)
+    print(num_bins)
+
+
+    for r in relevent_relations:
+        p = f'{URI_PREFIX}predicat#binning{r}'
+        new_id = len(data.i2r)
+        data.r2i[p] = new_id
+        data.i2r.append(p)
+        data.num_relations += 1
+
+    for relation in relevent_relations:
+        for b in range(num_bins):
+            o = (f'{URI_PREFIX}entity#binning{b+1}#relation{relation}', f'{URI_PREFIX}datatype#bin')
+            new_id = len(data.i2e)
+            data.e2i[o] = new_id
+            data.i2e.append(o)
+            data.num_entities += 1
+
+        sub_df = encode_number_sublist(
+            data.triples[data.triples[:, 1] == relation], data.i2e)
+
+        # TODO test new function
+        if (use_lof):
+            lof = LocalOutlierFactor(n_neighbors=10)
+            lof.fit(sub_df[:, 1].reshape(-1, 1))
+            outlier_scores = lof.negative_outlier_factor_
+            # Create a new column in the numpy array to store the outlier scores
+            # tensor_np = torch.hstack((encoded_df, outlier_scores.reshape(-1,1)))
+            threshold = np.percentile(outlier_scores, 10)
+            # use the outlier scores to filter out the outliers from the numpy array
+            sub_df = sub_df[outlier_scores > threshold]
+
+        # numpy is used here since torch.histc was not working for some reason.
+        sub_df = torch.cat(  # put bins and sub_df together
+            (sub_df, torch.from_numpy(  # get numpy solutions back
+                np.digitize(  # assign for each value in sub_df the corresponding bin
+                    sub_df[:, 1], np.histogram(  # calculate n bins based on values in sub_df
+                        sub_df[:, 1], num_bins)[1][:-1]
+                )
+            ).reshape(-1, 1)  # transfrom x tensor into (x,1) tensor to fit (x,2) shape of sub_df
+            ), 1)
+
+        object_mapping = np.vectorize(lambda t: data.e2i[(
+            f'{URI_PREFIX}entity#binning{t}#relation{relation}', f'{URI_PREFIX}datatype#bin')])
+
+        predicat_mapping = np.vectorize(
+            lambda t: data.r2i[f'{URI_PREFIX}predicat#binning{relation}'])
+
+        sub_df[:, 1] = torch.tensor(np.array([predicat_mapping(sub_df[:, 2])]), dtype=torch.int32)
+        sub_df[:, 2] = torch.tensor(np.array([object_mapping(sub_df[:, 2])]), dtype=torch.int32)
+        data.triples = torch.cat((data.triples, sub_df), 0)
+    data = delete_empty_bin_types(data,num_bins*len(relevent_relations))
+    return data
+
+def bin_numbers_lof_100_v3(data: Data, **kwargs):
+    return bin_numbers_v3(data=data, num_bins=100, use_lof=True)
+
+def bin_numbers_100_v3(data: Data, **kwargs):
+    return bin_numbers_v3(data=data, num_bins=100, use_lof=False)
+
+def bin_numbers_v4(data: Data, num_bins=3, use_lof=False, num_bins_as_percent=False, equal_height_binning=False, **kwargs):
+    relevent_relations = get_relevant_relations(
+        data, relevant_types=RDF_NUMBER_TYPES)
+    print(num_bins)
+
+    if f'{URI_PREFIX}predicat#prevBin' not in data.r2i:
+        p = f'{URI_PREFIX}predicat#prevBin'
+        new_id = len(data.i2r)
+        data.r2i[p] = new_id
+        data.i2r.append(p)
+        data.num_relations += 1
+        p = f'{URI_PREFIX}predicat#nextBin'
+        new_id = len(data.i2r)
+        data.r2i[p] = new_id
+        data.i2r.append(p)
+        data.num_relations += 1
+
+    for r in relevent_relations:
+        p = f'{URI_PREFIX}predicat#binning{r}'
+        new_id = len(data.i2r)
+        data.r2i[p] = new_id
+        data.i2r.append(p)
+        data.num_relations += 1
+
+    for relation in relevent_relations:
+        for b in range(num_bins):
+            o = (f'{URI_PREFIX}entity#binning{b+1}#relation{relation}', f'{URI_PREFIX}datatype#bin')
+            new_id = len(data.i2e)
+            data.e2i[o] = new_id
+            data.i2e.append(o)
+            data.num_entities += 1
+            if (f'{URI_PREFIX}entity#binning{b}#relation{relation}', f'{URI_PREFIX}datatype#bin') in data.e2i:
+                data = add_triple(data,o,f'{URI_PREFIX}predicat#prevBin',(f'{URI_PREFIX}entity#binning{b}#relation{relation}', f'{URI_PREFIX}datatype#bin'))
+                data = add_triple(data,(f'{URI_PREFIX}entity#binning{b}#relation{relation}', f'{URI_PREFIX}datatype#bin'),f'{URI_PREFIX}predicat#nextBin',o)
+        sub_df = encode_number_sublist(
+            data.triples[data.triples[:, 1] == relation], data.i2e)
+
+        # TODO test new function
+        if (use_lof):
+            lof = LocalOutlierFactor(n_neighbors=10)
+            lof.fit(sub_df[:, 1].reshape(-1, 1))
+            outlier_scores = lof.negative_outlier_factor_
+            # Create a new column in the numpy array to store the outlier scores
+            # tensor_np = torch.hstack((encoded_df, outlier_scores.reshape(-1,1)))
+            threshold = np.percentile(outlier_scores, 10)
+            # use the outlier scores to filter out the outliers from the numpy array
+            sub_df = sub_df[outlier_scores > threshold]
+
+        # numpy is used here since torch.histc was not working for some reason.
+        sub_df = torch.cat(  # put bins and sub_df together
+            (sub_df, torch.from_numpy(  # get numpy solutions back
+                np.digitize(  # assign for each value in sub_df the corresponding bin
+                    sub_df[:, 1], np.histogram(  # calculate n bins based on values in sub_df
+                        sub_df[:, 1], num_bins)[1][:-1]
+                )
+            ).reshape(-1, 1)  # transfrom x tensor into (x,1) tensor to fit (x,2) shape of sub_df
+            ), 1)
+
+        object_mapping = np.vectorize(lambda t: data.e2i[(
+            f'{URI_PREFIX}entity#binning{t}#relation{relation}', f'{URI_PREFIX}datatype#bin')])
+
+        predicat_mapping = np.vectorize(
+            lambda t: data.r2i[f'{URI_PREFIX}predicat#binning{relation}'])
+
+        sub_df[:, 1] = torch.tensor(np.array([predicat_mapping(sub_df[:, 2])]), dtype=torch.int32)
+        sub_df[:, 2] = torch.tensor(np.array([object_mapping(sub_df[:, 2])]), dtype=torch.int32)
+        data.triples = torch.cat((data.triples, sub_df), 0)
+    #data = delete_empty_bin_types(data,num_bins*len(relevent_relations))
+    return data
+
+def bin_numbers_100_v4(data: Data, **kwargs):
+    return bin_numbers_v4(data=data, num_bins=100, use_lof=False)
+
+
+def bin_numbers_v5(data: Data, num_bins=3, use_lof=False, num_bins_as_percent=False, equal_height_binning=False, **kwargs):
+    relevent_relations = get_relevant_relations(
+        data, relevant_types=RDF_NUMBER_TYPES)
+    print(num_bins)
+
+    if f'{URI_PREFIX}predicat#prevBin' not in data.r2i:
+        p = f'{URI_PREFIX}predicat#prevBin'
+        new_id = len(data.i2r)
+        data.r2i[p] = new_id
+        data.i2r.append(p)
+        data.num_relations += 1
+        p = f'{URI_PREFIX}predicat#nextBin'
+        new_id = len(data.i2r)
+        data.r2i[p] = new_id
+        data.i2r.append(p)
+        data.num_relations += 1
+
+    for r in relevent_relations:
+        p = f'{URI_PREFIX}predicat#binning{r}'
+        new_id = len(data.i2r)
+        data.r2i[p] = new_id
+        data.i2r.append(p)
+        data.num_relations += 1
+    for b in range(num_bins):
+        o = (f'{URI_PREFIX}entity#binning{b+1}', f'{URI_PREFIX}datatype#bin')
+        new_id = len(data.i2e)
+        data.e2i[o] = new_id
+        data.i2e.append(o)
+        data.num_entities += 1
+        if (f'{URI_PREFIX}entity#binning{b}', f'{URI_PREFIX}datatype#bin') in data.e2i:
+            data = add_triple(data,o,f'{URI_PREFIX}predicat#prevBin',(f'{URI_PREFIX}entity#binning{b}', f'{URI_PREFIX}datatype#bin'))
+            data = add_triple(data,(f'{URI_PREFIX}entity#binning{b}', f'{URI_PREFIX}datatype#bin'),f'{URI_PREFIX}predicat#nextBin',o)
+
+    for relation in relevent_relations:
+
+        sub_df = encode_number_sublist(
+            data.triples[data.triples[:, 1] == relation], data.i2e)
+
+        # TODO test new function
+        if (use_lof):
+            lof = LocalOutlierFactor(n_neighbors=10)
+            lof.fit(sub_df[:, 1].reshape(-1, 1))
+            outlier_scores = lof.negative_outlier_factor_
+            # Create a new column in the numpy array to store the outlier scores
+            # tensor_np = torch.hstack((encoded_df, outlier_scores.reshape(-1,1)))
+            threshold = np.percentile(outlier_scores, 10)
+            # use the outlier scores to filter out the outliers from the numpy array
+            sub_df = sub_df[outlier_scores > threshold]
+
+        # numpy is used here since torch.histc was not working for some reason.
+        sub_df = torch.cat(  # put bins and sub_df together
+            (sub_df, torch.from_numpy(  # get numpy solutions back
+                np.digitize(  # assign for each value in sub_df the corresponding bin
+                    sub_df[:, 1], np.histogram(  # calculate n bins based on values in sub_df
+                        sub_df[:, 1], num_bins)[1][:-1]
+                )
+            ).reshape(-1, 1)  # transfrom x tensor into (x,1) tensor to fit (x,2) shape of sub_df
+            ), 1)
+
+        object_mapping = np.vectorize(lambda t: data.e2i[(
+            f'{URI_PREFIX}entity#binning{t}', f'{URI_PREFIX}datatype#bin')])
+
+        predicat_mapping = np.vectorize(
+            lambda t: data.r2i[f'{URI_PREFIX}predicat#binning{relation}'])
+
+        sub_df[:, 1] = torch.tensor(np.array([predicat_mapping(sub_df[:, 2])]), dtype=torch.int32)
+        sub_df[:, 2] = torch.tensor(np.array([object_mapping(sub_df[:, 2])]), dtype=torch.int32)
+        data.triples = torch.cat((data.triples, sub_df), 0)
+    #data = delete_empty_bin_types(data,num_bins*len(relevent_relations))
+    return data
+
+def bin_numbers_100_v5(data: Data, **kwargs):
+    return bin_numbers_v4(data=data, num_bins=100, use_lof=False)

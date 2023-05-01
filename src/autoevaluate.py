@@ -111,7 +111,9 @@ def process(cfg: DictConfig) -> None:
     
     np.savetxt(f'{embeddings_base_path}train${str(version)}.csv',train_embeddings,delimiter=',',fmt="%s")
     np.savetxt(f'{embeddings_base_path}test${str(version)}.csv',test_embeddings,delimiter=',',fmt="%s")
-
+    #if embeddings.dtype == "complex64":
+    #    train_embeddings = train_embeddings.real
+    #    test_embeddings = test_embeddings.real
     # TODO pickle embedder
     # TODO save embeddings and be able to save multiple of same embedding method (e.g. _0, _1 ...)
     # prio 1

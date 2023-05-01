@@ -72,9 +72,39 @@ class KG2E(PykeenEmbedder):
 
 class RGCN(PykeenEmbedder):
     def __init__(self, data, optimizer="Adam", optimizer_args={},
-                 train_loop_type="SLCWA", train_loop_args={"num_epochs": 5,'batch_size':256}):
+                 train_loop_type="SLCWA", train_loop_args={"num_epochs": 5,'batch_size':4.096,"sampler":"schlichtkrull", "gradient_clipping_max_norm":1}):
         super().__init__(models.RGCN, data,optimizer,optimizer_args,train_loop_type,train_loop_args)
 
+
+
+
+class ComplEx(PykeenEmbedder):
+    def __init__(self, data, optimizer="Adam", optimizer_args={},
+                 train_loop_type="SLCWA", train_loop_args={"num_epochs": 5,'batch_size':256}):
+        super().__init__(models.ComplEx, data,optimizer,optimizer_args,train_loop_type,train_loop_args)
+
+class SimplE(PykeenEmbedder):
+    def __init__(self, data, optimizer="Adam", optimizer_args={},
+                 train_loop_type="SLCWA", train_loop_args={"num_epochs": 5,'batch_size':256}):
+        super().__init__(models.SimplE, data,optimizer,optimizer_args,train_loop_type,train_loop_args)
+class DistMult(PykeenEmbedder):
+    def __init__(self, data, optimizer="Adam", optimizer_args={},
+                 train_loop_type="SLCWA", train_loop_args={"num_epochs": 5,'batch_size':256}):
+        super().__init__(models.DistMult, data,optimizer,optimizer_args,train_loop_type,train_loop_args)
+class RGCN2(PykeenEmbedder):
+    def __init__(self, data, optimizer="Adam", optimizer_args={},
+                 train_loop_type="SLCWA", train_loop_args={"sampler": "schlichtkrull"}):
+        super().__init__(models.RGCN, data,optimizer,optimizer_args,train_loop_type,train_loop_args)
+
+
+class ComplEx2(PykeenEmbedder):
+    def __init__(self, data, optimizer="Adam", optimizer_args={},
+                 train_loop_type="LCWA", train_loop_args={"num_epochs": 5,'batch_size':256}):
+        super().__init__(models.ComplEx, data,optimizer,optimizer_args,train_loop_type,train_loop_args)
+class DistMult2(PykeenEmbedder):
+    def __init__(self, data, optimizer="Adam", optimizer_args={},
+                 train_loop_type="LCWA", train_loop_args={"num_epochs": 5,'batch_size':256}):
+        super().__init__(models.DistMult, data,optimizer,optimizer_args,train_loop_type,train_loop_args)
 
 
         

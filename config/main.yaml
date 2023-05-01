@@ -100,6 +100,15 @@ preprocess:
     num_topics: 10
     max_assigned_topic: 3
 
+  bin_numbers_lof_100_v3:
+    num_bins: 100
+  bin_numbers_100_v3:
+    num_bins: 100
+  bin_numbers_100_v4:
+    num_bins: 100
+  bin_numbers_100_v5:
+    num_bins: 100
+
 embed:
   RDF2Vec: 
     embedding_name: Word2Vec
@@ -124,18 +133,34 @@ embed:
     train_loop_args:
       num_epochs: 40
       batch_size: 2048
-  complex:
+  ComplEx:
     optimizer: Adam 
     train_loop_type: SLCWA
     train_loop_args:
-      num_epochs: 30
-      batch_size: 1024
+      num_epochs: 200
+      batch_size: 262144
+  DistMult:
+    optimizer: Adam 
+    train_loop_type: SLCWA
+    train_loop_args:
+      num_epochs: 200
+      batch_size: 262144 
   RGCN:
     optimizer: Adam 
     train_loop_type: SLCWA
     train_loop_args:
-      num_epochs: 30
-      batch_size: 1024
+      batch_size: 30000
+      gradient_clipping_max_norm: 1.0
+      num_epochs: 5
+      sampler: schlichtkrull
+
+  SimplE:
+    optimizer: Adam 
+    train_loop_type: SLCWA
+    train_loop_args:
+      num_epochs: 200
+      batch_size: 16348 
+
   
 
 
@@ -192,7 +217,7 @@ pipeline:
   #  - delete_all_literals
   #  - delete_number_literals
   #  - bin_numbers2
-  embed: RDF2Vec2
+  embed: ComplEx
   evaluate: 
     - SVM
     - KNN
@@ -205,6 +230,13 @@ pipeline_schedule:
     - mdgenre
   #  - dmg777k
   preprocess:
+
+    -
+      - bin_numbers_100_v4
+      - delete_number_literals
+    -
+      - bin_numbers_100_v5
+      - delete_number_literals
     # H1
     -
       - delete_all_literals
@@ -213,9 +245,9 @@ pipeline_schedule:
     -
       - simplistic_approach
 
-    -
-      - LDA_topic_assignment
-      - delete_text_literals
+    #-
+    #  - LDA_topic_assignment
+    #  - delete_text_literals
     # Baselines
     -
       - one_entity
@@ -322,11 +354,23 @@ pipeline_schedule:
     -
       - bin_numbers_hierarchically_3_10_100
       - simplistic_approach
+    -
+      - bin_numbers_100_v3
+      - delete_number_literals
+    -
+      - bin_numbers_lof_100_v3
+      - delete_number_literals
 
 
   embed:
+    #- RGCN
     - TransE
     #- RDF2Vec
     - RDF2Vec2
+    #- ComplEx
+    - SimplE
+    - DistMult
+
+
   iterations: 1
 
