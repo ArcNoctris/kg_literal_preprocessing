@@ -14,6 +14,7 @@ def amplus(final=True, torch=True, prune_dist=None, **kwargs) -> Union[Data, Non
     else:
         pickle_name = f'amplus_{"final" if final else ""}_{"torch" if torch else ""}_{prune_dist}'
         data = _load('amplus', final=final, torch=torch, prune_dist=prune_dist)
+        print("clean up data (Transform decimals)")
         if data != None and data.triples != None and data.i2e != None and data.e2i != None:
             # clean up decimals (bad data quality)
             relevant_relations = get_relevant_relations(data, RDF_DECIMAL_TYPES)
@@ -27,6 +28,8 @@ def amplus(final=True, torch=True, prune_dist=None, **kwargs) -> Union[Data, Non
                     data.e2i.pop(data.i2e[triple[2]])
                     data.i2e[triple[2]] = (new_string, data.i2e[triple[2]][1])
                     data.e2i[data.i2e[triple[2]]] = triple[2]
+            data = ensure_data_symmetry(data)
+        print("save file...")
         with open(f'{BASE_FILE_PATH}/{pickle_name}.pickle', "wb") as f:
             pickle.dump(data, f)      
     return data
@@ -37,6 +40,7 @@ def dmgfull(final=True, torch=True, prune_dist=None, **kwargs) -> Union[Data, No
     else:
         pickle_name = f'dmgfull_{"final" if final else ""}_{"torch" if torch else ""}_{prune_dist}'
         data = _load('dmgfull', final=final, torch=torch, prune_dist=prune_dist)
+        print("save file...")
         with open(f'{BASE_FILE_PATH}/{pickle_name}.pickle', "wb") as f:
             pickle.dump(data, f)
     return data
@@ -48,6 +52,7 @@ def dmg777k(final=True, torch=True, prune_dist=None, **kwargs) -> Union[Data, No
     else:
         pickle_name = f'dmg777k_{"final" if final else ""}_{"torch" if torch else ""}_{prune_dist}'
         data = _load('dmg777k', final=final, torch=torch, prune_dist=prune_dist)
+        print("save file...")
         with open(f'{BASE_FILE_PATH}/{pickle_name}.pickle', "wb") as f:
             pickle.dump(data, f)
     return data
@@ -59,6 +64,7 @@ def mdgenre(final=True, torch=True, prune_dist=None, **kwargs) -> Union[Data, No
     else:
         pickle_name = f'mdgenre_{"final" if final else ""}_{"torch" if torch else ""}_{prune_dist}'
         data = _load('mdgenre', final=final, torch=torch, prune_dist=prune_dist)
+        print("save file...")
         with open(f'{BASE_FILE_PATH}/{pickle_name}.pickle', "wb") as f:
             pickle.dump(data, f)
     return data
@@ -73,6 +79,7 @@ def _load(dataset_name="dmg777k", final=True, torch=True, prune_dist=None, **kwa
             for e in data.e2i.keys():
                 clean_e2i[e[1]] = e[0]
             data.e2i = clean_e2i
+        print("ensure data symmetry...")
         data = ensure_data_symmetry(data)
         return data
 

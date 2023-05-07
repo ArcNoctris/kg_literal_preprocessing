@@ -1,0 +1,21 @@
+# bin_3:
+#   - bin_numbers_3
+#   - delete_all_literals
+# bv1:
+#   - bin_numbers_100
+#   - delete_all_literals
+# bv3:
+#   - bin_numbers_100_v3
+#   - delete_all_literals
+# bv4:
+#   - bin_numbers_100_v4
+#   - delete_all_literals
+# bv5:
+#   - bin_numbers_100_v5
+#   - delete_all_literals
+InAll:
+  - simplistic_approach
+ExAll:
+  - delete_all_literals
+simplistic2:
+  - simplistic_approach

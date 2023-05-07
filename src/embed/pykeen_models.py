@@ -8,6 +8,7 @@ from pyrdf2vec.typings import Embeddings
 from pykeen.utils import resolve_device
 from utils.data_utils import data_to_kg, extract_ents
 import os
+import torch
 FILEPATH = "data/preprocessed"
 def data_to_pykeen(data):
     if not os.path.exists(f'{FILEPATH}/{data.name}.tsv.gz'):
@@ -30,6 +31,7 @@ class PykeenEmbedder():
     def __init__(self, embedder, data, optimizer, optimizer_args,
                  train_loop_type, train_loop_args):
         self.data = data
+        torch.cuda.empty_cache()
         
 
         

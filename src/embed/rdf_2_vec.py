@@ -42,21 +42,25 @@ import pyrdf2vec as r2v
 from pyrdf2vec.embedders import Embedder, Word2Vec
 from pyrdf2vec.graphs import KG
 from pyrdf2vec.typings import Embeddings, Entities, Literals, SWalk
+from .bfs_random_walker import BFSRandomWalker
 from pyrdf2vec.walkers import RandomWalker, Walker
 from utils.data_utils import data_to_kg, extract_ents
 
-
 class RDF2Vec():
-
+    
     def __init__(self, data, embedding_name="Word2Vec", embedding_args={"workers": 4, "epochs": 40},
-                 walker_name="RandomWalker", walker_args={"max_depth": 2}):
+                 walker_name="BFSRandomWalker", walker_args={"max_depth": 2, "with_reverse":True}):
         self.data = data
+        torch.cuda.empty_cache()
         embedder = getattr(
             r2v.embedders, embedding_name)(**embedding_args)
-        walker = getattr(
-            r2v.walkers, walker_name)(**walker_args)
+        if walker_name=="BFSRandomWalker":
+            walker =BFSRandomWalker(**walker_args)
+        else:
+            walker = getattr(
+                r2v.walkers, walker_name)(**walker_args)
         self.transformer: RDF2VecTransformer = RDF2VecTransformer(
-            embedder, walkers=[walker], verbose=0)
+            embedder, walkers=[walker], verbose=1)
 
     def fit_transform(self) -> Tuple[Embeddings, Embeddings, Embeddings]:
         kg = data_to_kg(self.data)

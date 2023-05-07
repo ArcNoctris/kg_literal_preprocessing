@@ -10,31 +10,48 @@ import logging
 import os
 import numpy as np
 log = logging.getLogger(__name__)
+BASEPATH = "data/preprocessed"
+import pickle
+from kgbench.load import Data
 
 
-@hydra.main(version_base=None, config_path="../config", config_name="main")
-def process(cfg: DictConfig) -> None:
+@hydra.main(version_base=None, config_path="../config", config_name="single")
+def evaluate_one(cfg:DictConfig)->None:
+    evaluate_approach(cfg)
 
+def load_preprocessed_data(cfg: DictConfig)->Data:
+    with open(f'{BASEPATH}/{cfg["pipeline"]["dataload"]}+{cfg["pipeline"]["augment"]}.pickle', "rb") as f:
+        data:Data = pickle.load(f)
+    return data
+def save_preprocessed_data(data:Data, cfg: DictConfig):
+    with open(f'{BASEPATH}/{cfg["pipeline"]["dataload"]}+{cfg["pipeline"]["augment"]}.pickle', "wb") as f:
+        pickle.dump(data, f)
+def exist_preprocessed_data(cfg: DictConfig):
+    return os.path.exists(f'{BASEPATH}/{cfg["pipeline"]["dataload"]}+{cfg["pipeline"]["augment"]}.pickle')
+
+
+
+    
+
+def evaluate_approach(cfg: DictConfig) -> None:
     log.info("Data loading...")
-    # TODO only load if preprocessed file not available
-    print(cfg["preprocess"][cfg["pipeline"]["preprocess"][0]])
-    data = getattr(dataload, cfg["pipeline"]["dataload"])(**cfg["dataload"][cfg["pipeline"]["dataload"]])
-    data.name = cfg["pipeline"]["dataload"]
-    data = update_dataset_name(
-        data, cfg["preprocess"], cfg["pipeline"]["preprocess"])
+    if exist_preprocessed_data(cfg):
+        data = load_preprocessed_data(cfg)
+        log.info("Preprocessed Data found, Skipping Preprocess...")
+    else:
+        data = getattr(dataload, cfg["pipeline"]["dataload"])(**cfg["dataload"][cfg["pipeline"]["dataload"]])
+        data.name = f'{cfg["pipeline"]["dataload"]}+{cfg["pipeline"]["augment"]}'
+    # data = update_dataset_name(
+    #     data, cfg["preprocess"], cfg["pipeline"]["preprocess"])
     
-    log.info("ensure data symmetry")
-    data = ensure_data_symmetry(data)
-    
-    log.info("Preprocess started...")
-    for step in cfg["pipeline"]["preprocess"]:
-        log.info(f"Processing step {step}...")
-        data = getattr(preprocess, step)(data, **cfg["preprocess"][step])
+        log.info("Preprocess started...")
+        for step in cfg['aug_approach'][cfg["pipeline"]["augment"]]:
+            log.info(f"Processing step {step}...")
+            data = getattr(preprocess, step)(data, **cfg["aug_method"][step])
+        save_preprocessed_data(data,cfg)
 
-    # TODO save preprocessed file 
 
     log.info("Embedding started...")
-    # TODO load embedder if allready there ? (not best idea since i want to do 5 seperate embeddings for each embedding method)
     embedder = getattr(embed, cfg["pipeline"]["embed"])(data,
                                                         **cfg["embed"][cfg["pipeline"]["embed"]])
 
@@ -43,7 +60,7 @@ def process(cfg: DictConfig) -> None:
 
     log.info("fit_transform")
     embeddings, train_embeddings, test_embeddings = embedder.fit_transform()
-    version = 0
+    version = 0 # if approach allready ambedded
     embeddings_base_path = f'{cfg["file_paths"]["embedded"]}/{data.name}${cfg["pipeline"]["embed"]}$'
     while(os.path.exists(f'{embeddings_base_path}train${str(version)}.csv')):
         version +=1
@@ -52,8 +69,7 @@ def process(cfg: DictConfig) -> None:
     np.savetxt(f'{embeddings_base_path}test${str(version)}.csv',test_embeddings,delimiter=',',fmt="%s")
 
     # TODO pickle embedder
-    # TODO save embeddings and be able to save multiple of same embedding method (e.g. _0, _1 ...)
-    # prio 1
+
     log.info("Classifier fitting started...")
     # TODO pack into 1 step or create map instead of list to be able to know model name.
     models = {}
@@ -64,9 +80,9 @@ def process(cfg: DictConfig) -> None:
         model.fit(train_embeddings, train_target)
         models[m] = model
         
-    if embeddings.dtype == "complex64":
-        train_embeddings = train_embeddings.real
-        test_embeddings = test_embeddings.real
+    # if embeddings.dtype == "complex64":
+    #     train_embeddings = train_embeddings.real
+    #     test_embeddings = test_embeddings.real
     log.info("Evaluation started...")
     # TODO save into file to analyze in subsequent stages (also with _0,_1 and so on)
     # prio 1.1
@@ -92,4 +108,4 @@ def process(cfg: DictConfig) -> None:
     log.info("Save Data...")
 
 if __name__ == '__main__':
-    process()
+    evaluate_one()

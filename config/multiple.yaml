@@ -1,0 +1,29 @@
+defaults:
+  - dataload: dataload
+  - aug_method: methods
+  - aug_approach: approach
+  - embed: embed
+  - evaluate: evaluate
+  - pipeline: default
+  - _self_
+file_paths:
+  preprocessed: data/preprocessed
+  embedded: data/embedded
+  predicted: data/predicted
+schedule:
+  dataload:
+    - dmgfull
+    - dmg777k
+    - amplus
+    - mdgenre
+
+  augment:
+    - InAll
+    - ExAll
+
+  embed:
+    - TransE
+    - DistMult
+    - RDF2Vec
+  iterations: 1
+

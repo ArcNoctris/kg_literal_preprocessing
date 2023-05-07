@@ -1,0 +1,84 @@
+bin_numbers2:
+  num_bins: 10
+simplistic_approach:
+  classify: 1
+append_weekday_and_month:
+  neighborhood: 1
+delete_number_literals:
+  neighborhood: 1
+delete_text_literals:
+  neighborhood: 1
+do_nothing:
+  nothingness: true
+delete_all_literals:
+  neighborhood: 1
+delete_all_but_numbers:
+  neighborhood: 1
+delete_none_literals:
+  neighborhood: 1
+delete_geo_literals:
+  neighborhood: 1
+delete_image_literals:
+  neighborhood: 1
+delete_date_literals:
+  neighborhood: 1
+one_entity:
+  num_bins: 1
+bin_numbers_3:
+  num_bins: 3
+bin_numbers_10:
+  num_bins: 10
+bin_numbers_100:
+  num_bins: 100
+bin_numbers_lof_3:
+  num_bins: 3
+bin_numbers_lof_10:
+  num_bins: 10
+bin_numbers_lof_100:
+  num_bins: 100
+bin_numbers_hierarchically_3_10_100:
+  list_num_bins:
+    - 3
+    - 10
+    - 100
+altering_bins:
+  num_bins: 10
+
+subpopulation_binning:
+  num_bins: 10
+subpopulation_binning_lof_100:
+  num_bins: 100
+subpopulation_binning_lof_10:
+  num_bins: 10
+subpopulation_binning_10:
+  num_bins: 10
+bound_subpopulation_binning_lof_10:
+  num_bins: 10
+bound_subpopulation_binning_lof_100:
+  num_bins: 10
+bound_subpopulation_binning_10:
+  num_bins: 10
+bin_numbers_percentage_3:
+  num_bins: 3
+bin_numbers_percentage_5:
+  num_bins: 5
+bin_numbers_percentage_15:
+  num_bins: 15
+bin_numbers_lof_percentage_3:
+  num_bins: 3
+bin_numbers_lof_percentage_5:
+  num_bins: 5
+bin_numbers_lof_percentage_15:
+  num_bins: 15
+LDA_topic_assignment:
+  num_topics: 10
+  max_assigned_topic: 3
+
+bin_numbers_lof_100_v3:
+  num_bins: 100
+bin_numbers_100_v3:
+  num_bins: 100
+bin_numbers_100_v4:
+  num_bins: 100
+bin_numbers_100_v5:
+  num_bins: 100

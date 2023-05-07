@@ -4,7 +4,7 @@ from sklearn.model_selection import GridSearchCV
 
 
 class KNN():
-    def __init__(self, random_state=42, n_neighbors=[3, 5, 8,15], leaf_size=[10, 20, 30], cv=10):
+    def __init__(self, n_neighbors=[3, 5, 8,15], leaf_size=[15, 30, 45], cv=5):
         knn = KNeighborsClassifier()
         self.classifier = GridSearchCV(knn, {"n_neighbors": n_neighbors, 'leaf_size':leaf_size}, cv=cv)
 
