@@ -23,16 +23,32 @@ from sklearn.neighbors import LocalOutlierFactor
 from utils import delete_r
 
 
-def delete_number_literals(data:Data,**kwargs)-> Data:
-    rr = get_relevant_relations(data,RDF_NUMBER_TYPES)
-    return delete_r(data, torch.tensor(rr))
-
 def delete_all_literals(data:Data, **kwargs)-> Data:
     rr = get_relevant_relations(data,ALL_LITERALS)
     return delete_r(data, torch.tensor(rr))
 
 def delete_all_but_numbers(data:Data, **kwargs) -> Data:
-    rr = get_relevant_relations(data,ALL_BUT_NUMBER)
+    to_exclude = RDF_NUMBER_TYPES
+    rr = get_relevant_relations(data,[l for l in ALL_LITERALS if l not in RDF_NUMBER_TYPES])
+    return delete_r(data, torch.tensor(rr))
+
+def delete_all_but_dates(data:Data, **kwargs) -> Data:
+    to_exclude = RDF_DATE_TYPES
+    rr = get_relevant_relations(data,[l for l in ALL_LITERALS if l not in RDF_NUMBER_TYPES])
+    return delete_r(data, torch.tensor(rr))
+
+def delete_all_but_text(data:Data, **kwargs) -> Data:
+    to_exclude = POTENTIAL_TEXT_TYPES
+    rr = get_relevant_relations(data,[l for l in ALL_LITERALS if l not in RDF_NUMBER_TYPES])
+    return delete_r(data, torch.tensor(rr))
+
+def delete_all_but_images(data:Data, **kwargs) -> Data:
+    to_exclude = IMAGE_TYPES
+    rr = get_relevant_relations(data,[l for l in ALL_LITERALS if l not in RDF_NUMBER_TYPES])
+    return delete_r(data, torch.tensor(rr))
+
+def delete_number_literals(data:Data,**kwargs)-> Data:
+    rr = get_relevant_relations(data,RDF_NUMBER_TYPES)
     return delete_r(data, torch.tensor(rr))
 
 def delete_date_literals(data:Data, **kwargs) -> Data:
@@ -43,14 +59,14 @@ def delete_image_literals(data:Data, **kwargs) -> Data:
     rr = get_relevant_relations(data,IMAGE_TYPES)
     return delete_r(data, torch.tensor(rr))
 
+def delete_text_literals(data:Data, **kwargs) -> Data:
+    rr = get_relevant_relations(data,POTENTIAL_TEXT_TYPES)
+    return delete_r(data, torch.tensor(rr))
+
 def delete_geo_literals(data:Data, **kwargs) -> Data:
     rr = get_relevant_relations(data,GEO_TYPES)
     return delete_r(data, torch.tensor(rr))
 
 def delete_none_literals(data:Data, **kwargs) -> Data:
-    rr = get_relevant_relations(data,POTENTIAL_TEXT_TYPES)
-    return delete_r(data, torch.tensor(rr))
-
-def delete_text_literals(data:Data, **kwargs) -> Data:
     rr = get_relevant_relations(data,POTENTIAL_TEXT_TYPES)
     return delete_r(data, torch.tensor(rr))

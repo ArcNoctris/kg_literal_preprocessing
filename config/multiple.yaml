@@ -12,14 +12,23 @@ file_paths:
   predicted: data/predicted
 schedule:
   dataload:
-    - dmgfull
     - dmg777k
     - amplus
     - mdgenre
+    - dmgfull
 
   augment:
     - InAll
     - ExAll
+    - InNumbers
+    - InDates
+    - InText
+    - InImages
+    - ExNumbers
+    - ExDates
+    - ExText
+    - ExImages
+
 
   embed:
     - TransE

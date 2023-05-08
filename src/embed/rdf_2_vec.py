@@ -46,10 +46,11 @@ from .bfs_random_walker import BFSRandomWalker
 from pyrdf2vec.walkers import RandomWalker, Walker
 from utils.data_utils import data_to_kg, extract_ents
 
+
 class RDF2Vec():
     
     def __init__(self, data, embedding_name="Word2Vec", embedding_args={"workers": 4, "epochs": 40},
-                 walker_name="BFSRandomWalker", walker_args={"max_depth": 2, "with_reverse":True}):
+                 walker_name="BFSRandomWalker", walker_args={"max_depth": 2, "with_reverse":True, "random_state":42}):
         self.data = data
         torch.cuda.empty_cache()
         embedder = getattr(

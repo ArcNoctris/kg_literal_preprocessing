@@ -1,13 +1,14 @@
 RDF2Vec: 
   embedding_name: Word2Vec
   embedding_args:
-    workers: 4
+    workers: 1 # to ensure determinism
     epochs: 50
 
   walker_name: BFSRandomWalker
   walker_args:
     max_depth: 2 # change to 2
     max_walks: 500
+    random_state: 42
 
 RDF2Vec2: 
   embedding_name: Word2Vec
@@ -17,6 +18,7 @@ RDF2Vec2:
   walker_name: RandomWalker
   walker_args:
     max_depth: 2
+    random_state: 42
 
 TransE:
   optimizer: Adam 
@@ -24,6 +26,13 @@ TransE:
   train_loop_args:
     num_epochs: 100
     batch_size: 2000
+
+# TransE:
+#   optimizer: Adam 
+#   train_loop_type: LCWA
+#   train_loop_args:
+#     num_epochs: 100
+#     batch_size: 2000
 ComplEx:
   optimizer: Adam 
   train_loop_type: SLCWA

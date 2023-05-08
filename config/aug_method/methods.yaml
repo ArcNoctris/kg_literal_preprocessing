@@ -1,27 +1,45 @@
-bin_numbers2:
-  num_bins: 10
+# BASELINE
 simplistic_approach:
   classify: 1
-append_weekday_and_month:
+delete_all_literals:
   neighborhood: 1
+
+delete_all_but_numbers:
+  neighborhood: 1
+delete_all_but_dates:
+  neighborhood: 1
+delete_all_but_text:
+  neighborhood: 1
+delete_all_but_images:
+  neighborhood: 1
+
 delete_number_literals:
+  neighborhood: 1
+delete_date_literals:
   neighborhood: 1
 delete_text_literals:
   neighborhood: 1
+delete_image_literals:
+  neighborhood: 1
+
+# Number Processing
+
+
+
+bin_numbers2:
+  num_bins: 10
+append_weekday_and_month:
+  neighborhood: 1
+
 do_nothing:
   nothingness: true
-delete_all_literals:
-  neighborhood: 1
-delete_all_but_numbers:
-  neighborhood: 1
+
+
 delete_none_literals:
   neighborhood: 1
 delete_geo_literals:
   neighborhood: 1
-delete_image_literals:
-  neighborhood: 1
-delete_date_literals:
-  neighborhood: 1
+
 one_entity:
   num_bins: 1
 bin_numbers_3:

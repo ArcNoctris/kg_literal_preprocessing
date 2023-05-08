@@ -3,21 +3,25 @@ InAll:
   - simplistic_approach
 ExAll:
   - delete_all_literals
-# InNumbers:
-#   - delete_all_but_numbers
-# InDates:
-#   - delete_all_but_dates
-# InText:
-#   - delete_all_but_text
-# InImages:
-#   - delete_all_but_images
-# ExNumbers:
-#   - delete_numbers
-# ExDates:
-#   - delete_dates
-# ExText:
-#   - delete_text
-# ExImages:
-#   - delete_images
+InNumbers:
+   - delete_all_but_numbers
+InDates:
+  - delete_all_but_dates
+InText:
+  - delete_all_but_text
+InImages:
+  - delete_all_but_images
+ExNumbers:
+  - delete_number_literals
+ExDates:
+  - delete_date_literals
+ExText:
+  - delete_text_literals
+ExImages:
+  - delete_image_literals
 # OneEntPerRel:
 #   - one_entity
+test1:
+  - delete_all_literals
+test2:
+  - delete_all_literals

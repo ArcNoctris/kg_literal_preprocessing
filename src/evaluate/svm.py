@@ -4,7 +4,7 @@ from sklearn.model_selection import GridSearchCV
 
 class SVM():
     def __init__(self, C=[0.01,0.1,1,10,100],  cv=5):
-        svc = SVC()
+        svc = SVC(random_state=42)
         self.classifier = GridSearchCV(svc, {"C": C}, cv=cv)
 
     def fit(self, train_embeddings, train_target):

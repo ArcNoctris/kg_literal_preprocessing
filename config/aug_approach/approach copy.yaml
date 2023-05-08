@@ -19,3 +19,7 @@ ExAll:
   - delete_all_literals
 simplistic2:
   - simplistic_approach
+test1:
+  - delete_all_literals
+test2:
+  - delete_all_literals

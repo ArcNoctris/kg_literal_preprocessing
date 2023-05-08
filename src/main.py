@@ -8,7 +8,10 @@ import preprocess
 from sklearn.metrics import accuracy_score, confusion_matrix, f1_score
 import logging
 import os
+import sys
 import numpy as np
+import torch
+import random
 log = logging.getLogger(__name__)
 BASEPATH = "data/preprocessed"
 import pickle
@@ -34,6 +37,12 @@ def exist_preprocessed_data(cfg: DictConfig):
     
 
 def evaluate_approach(cfg: DictConfig) -> None:
+    np.random.seed(42) 
+    torch.manual_seed(42)
+    random.seed(42)
+    os.environ['PYTHONHASHSEED'] = '42'
+    #os.execv(sys.executable, [sys.executable] + sys.argv)
+
     log.info("Data loading...")
     if exist_preprocessed_data(cfg):
         data = load_preprocessed_data(cfg)

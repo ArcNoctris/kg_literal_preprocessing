@@ -36,7 +36,7 @@ class PykeenEmbedder():
 
         
         self.training_triples_factory = data_to_pykeen(data)
-        self.model = embedder(triples_factory=self.training_triples_factory)
+        self.model = embedder(triples_factory=self.training_triples_factory, random_seed=42)
         self.model = self.model.to(resolve_device('gpu'))
         optimizer = Adam(params=self.model.get_grad_params())
         self.training_loop = SLCWATrainingLoop(
