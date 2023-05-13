@@ -19,8 +19,42 @@ ExText:
   - delete_text_literals
 ExImages:
   - delete_image_literals
-# OneEntPerRel:
-#   - one_entity
+OneEntPerRel:
+   - one_entity
+
+5_bins:
+  - bin_numbers_5
+  - delete_all_literals
+10_bins:
+  - bin_numbers_10
+  - delete_all_literals
+100_bins:
+  - bin_numbers_100
+  - delete_all_literals
+
+5_lof_bins:
+  - bin_numbers_lof_5
+  - delete_all_literals
+10_lof_bins:
+  - bin_numbers_lof_10
+  - delete_all_literals
+100_lof_bins:
+  - bin_numbers_lof_100
+  - delete_all_literals
+
+1_pct_bins:
+  - bin_numbers_percentage_1
+  - delete_all_literals
+5_pct_bins:
+  - bin_numbers_percentage_1
+  - delete_all_literals
+10_pct_bins:
+  - bin_numbers_percentage_1
+  - delete_all_literals
+
+
+
+
 test1:
   - delete_all_literals
 test2:

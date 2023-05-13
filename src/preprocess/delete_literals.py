@@ -29,22 +29,22 @@ def delete_all_literals(data:Data, **kwargs)-> Data:
 
 def delete_all_but_numbers(data:Data, **kwargs) -> Data:
     to_exclude = RDF_NUMBER_TYPES
-    rr = get_relevant_relations(data,[l for l in ALL_LITERALS if l not in RDF_NUMBER_TYPES])
+    rr = get_relevant_relations(data,[l for l in ALL_LITERALS if l not in to_exclude])
     return delete_r(data, torch.tensor(rr))
 
 def delete_all_but_dates(data:Data, **kwargs) -> Data:
     to_exclude = RDF_DATE_TYPES
-    rr = get_relevant_relations(data,[l for l in ALL_LITERALS if l not in RDF_NUMBER_TYPES])
+    rr = get_relevant_relations(data,[l for l in ALL_LITERALS if l not in to_exclude])
     return delete_r(data, torch.tensor(rr))
 
 def delete_all_but_text(data:Data, **kwargs) -> Data:
     to_exclude = POTENTIAL_TEXT_TYPES
-    rr = get_relevant_relations(data,[l for l in ALL_LITERALS if l not in RDF_NUMBER_TYPES])
+    rr = get_relevant_relations(data,[l for l in ALL_LITERALS if l not in to_exclude])
     return delete_r(data, torch.tensor(rr))
 
 def delete_all_but_images(data:Data, **kwargs) -> Data:
     to_exclude = IMAGE_TYPES
-    rr = get_relevant_relations(data,[l for l in ALL_LITERALS if l not in RDF_NUMBER_TYPES])
+    rr = get_relevant_relations(data,[l for l in ALL_LITERALS if l not in to_exclude])
     return delete_r(data, torch.tensor(rr))
 
 def delete_number_literals(data:Data,**kwargs)-> Data:

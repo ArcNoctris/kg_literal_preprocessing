@@ -20,14 +20,30 @@ schedule:
   augment:
     - InAll
     - ExAll
+
     - InNumbers
     - InDates
     - InText
     - InImages
+    
     - ExNumbers
     - ExDates
     - ExText
     - ExImages
+
+    - OneEntPerRel
+
+    - 5_bins
+    - 10_bins
+    - 100_bins
+
+    - 5_lof_bins
+    - 10_lof_bins
+    - 100_lof_bins
+
+    - 1_pct_bins
+    - 5_pct_bins
+    - 10_pct_bins
 
 
   embed:

@@ -23,7 +23,7 @@ import numpy as np
 from sklearn.neighbors import LocalOutlierFactor
 import datetime
 from utils import URI_PREFIX
-from preprocess.binning import delete_empty_bin_types
+# from preprocess.binning import delete_empty_bin_types
 from nltk.corpus import stopwords
 import gensim
 from gensim.utils import simple_preprocess
@@ -38,6 +38,42 @@ import pyLDAvis
 import os
 import re
 
+def delete_empty_bin_types(data: Data, num_bins:int)-> Data:
+    to_delete= []
+    for d in data.i2e[-num_bins:]:
+        filtered = data.triples[data.triples[:,2]==data.e2i[d]]
+        if len(filtered) == 0:
+            to_delete.append(data.e2i[d])
+
+    if(len(to_delete)!=0):
+        #to_delete_i = [data.e2i[d] in]
+        print(f"deleting relations {to_delete}, since no occurences are given")
+                #create new e mapping
+        new_e2i = {}
+        new_i2e = []
+
+        for i in range(len(data.i2e)):
+            if i not in to_delete:
+                nt = torch.tensor(len(new_i2e), dtype=torch.int32)
+                it = torch.tensor(i, dtype=torch.int32)
+                new_e2i[data.i2e[it]] = nt
+                new_i2e.append(data.i2e[it])
+                # apply new mapping for triples
+        for t in data.triples:
+            t[0] = new_e2i[data.i2e[t[0]]]
+            #t[1] = torch.tensor(data.r2i[data.i2r[t[1].numpy()]], dtype=torch.int32)
+            t[2] = new_e2i[data.i2e[t[2]]]
+
+            # create new train & withheld
+
+            #update metedata
+        data.num_entities = len(new_i2e)
+
+        data.i2e = new_i2e
+        data.e2i = new_e2i
+        print('done deleteing')
+        print(data.name)
+    return data    
 
 def get_stopword_list(languages = ['dutch','spanish','french','portuguese','english']):
     stopword_list= []
