@@ -1,5 +1,5 @@
 import kgbench as kg
-from kgbench.load import Data
+from utils import Data
 import numpy as np
 import re
 from typing import Union
@@ -8,7 +8,7 @@ BASE_FILE_PATH = "data/raw"
 import os
 import pickle
 
-def amplus(final=True, torch=True, prune_dist=None, **kwargs) -> Union[Data, None]:
+def amplus(final=True, torch=True, prune_dist=None, **kwargs) -> Data:
     if pickle_exist('amplus', final=final, torch=torch, prune_dist=prune_dist):
         data = load_pickle('amplus', final=final, torch=torch, prune_dist=prune_dist)
     else:
@@ -27,14 +27,14 @@ def amplus(final=True, torch=True, prune_dist=None, **kwargs) -> Union[Data, Non
                         new_string = regex_search.group()  # get first result
                     data.e2i.pop(data.i2e[triple[2]])
                     data.i2e[triple[2]] = (new_string, data.i2e[triple[2]][1])
-                    data.e2i[data.i2e[triple[2]]] = triple[2]
+                    data.e2i[data.i2e[triple[2]]] = int(triple[2])
             data = ensure_data_symmetry(data)
         print("save file...")
         with open(f'{BASE_FILE_PATH}/{pickle_name}.pickle', "wb") as f:
             pickle.dump(data, f)      
     return data
 
-def dmgfull(final=True, torch=True, prune_dist=None, **kwargs) -> Union[Data, None]:
+def dmgfull(final=True, torch=True, prune_dist=None, **kwargs) -> Data:
     if pickle_exist('dmgfull', final=final, torch=torch, prune_dist=prune_dist):
         data = load_pickle('dmgfull', final=final, torch=torch, prune_dist=prune_dist)
     else:
@@ -46,7 +46,7 @@ def dmgfull(final=True, torch=True, prune_dist=None, **kwargs) -> Union[Data, No
     return data
 
 
-def dmg777k(final=True, torch=True, prune_dist=None, **kwargs) -> Union[Data, None]:
+def dmg777k(final=True, torch=True, prune_dist=None, **kwargs) -> Data:
     if pickle_exist('dmg777k', final=final, torch=torch, prune_dist=prune_dist):
         data = load_pickle('dmg777k', final=final, torch=torch, prune_dist=prune_dist)
     else:
@@ -58,7 +58,7 @@ def dmg777k(final=True, torch=True, prune_dist=None, **kwargs) -> Union[Data, No
     return data
 
 
-def mdgenre(final=True, torch=True, prune_dist=None, **kwargs) -> Union[Data, None]:
+def mdgenre(final=True, torch=True, prune_dist=None, **kwargs) -> Data:
     if pickle_exist('mdgenre', final=final, torch=torch, prune_dist=prune_dist):
         data = load_pickle('mdgenre', final=final, torch=torch, prune_dist=prune_dist)
     else:
@@ -70,18 +70,19 @@ def mdgenre(final=True, torch=True, prune_dist=None, **kwargs) -> Union[Data, No
     return data
 
 
-def _load(dataset_name="dmg777k", final=True, torch=True, prune_dist=None, **kwargs) -> Union[Data, None]:
-    if dataset_name in ['amplus', 'dblp', 'dmgfull', 'dmg777k', 'mdgenre']:
-        data = kg.load(dataset_name, final, torch, prune_dist=prune_dist)
-        #fixing https://github.com/pbloem/kgbench-loader/issues/2
-        if prune_dist == None:
-            clean_e2i = {}
-            for e in data.e2i.keys():
-                clean_e2i[e[1]] = e[0]
-            data.e2i = clean_e2i
-        print("ensure data symmetry...")
-        data = ensure_data_symmetry(data)
-        return data
+def _load(dataset_name="dmg777k", final=True, torch=True, prune_dist=None, **kwargs) -> Data:
+    # if dataset_name in ['amplus', 'dblp', 'dmgfull', 'dmg777k', 'mdgenre']:
+    # ignore warning, datatype loaded here is extended by datatypes defined in the framework specific Data type 
+    data:Data = kg.load(dataset_name, final, torch, prune_dist=prune_dist) # type: ignore
+    #fixing https://github.com/pbloem/kgbench-loader/issues/2
+    if prune_dist == None:
+        clean_e2i = {}
+        for e in data.e2i.keys():
+            clean_e2i[e[1]] = e[0]
+        data.e2i = clean_e2i
+    print("ensure data symmetry...")
+    data = ensure_data_symmetry(data)
+    return data
 
 def pickle_exist(dataset_name="dmg777k", final=True, torch=True, prune_dist=None)-> bool:
     pickle_name = f'{dataset_name}_{"final" if final else ""}_{"torch" if torch else ""}_{prune_dist}'

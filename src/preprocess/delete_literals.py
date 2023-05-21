@@ -11,7 +11,8 @@ from operator import itemgetter
 import torch
 import torch.nn.functional as F
 from utils import RDF_NUMBER_TYPES, get_relevant_relations, add_triple, get_p_types, ALL_LITERALS, ALL_BUT_NUMBER
-from kgbench.load import Data
+# from kgbench.load import Data
+from utils import Data
 from typing import List, Sequence, Tuple
 
 from kgbench import load, tic, toc, d

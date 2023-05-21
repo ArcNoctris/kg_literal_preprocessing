@@ -1,6 +1,7 @@
 from pyrdf2vec.graphs import KG
 from pyrdf2vec.graphs import KG, Vertex
-from kgbench.load import Data
+# from kgbench.load import Data
+from utils import Data
 from utils import RDF_NUMBER_TYPES
 from typing import List, Dict, Tuple
 import torch
@@ -110,10 +111,10 @@ def data_to_kg(data: Data):
         # object_type = data.i2e[triple[2]][1]
         # if subject_type == "iri" and object_type == "iri":
 
-        subj = Vertex(data.i2e[triple[0]][0])
-        obj = Vertex(data.i2e[triple[2]][0])
-        pred = Vertex(data.i2r[triple[1]],
-                      predicate=True, vprev=subj, vnext=obj)
+        subj = Vertex(*[data.i2e[triple[0]][0]])
+        obj = Vertex(*[data.i2e[triple[2]][0]])
+        pred = Vertex(*[data.i2r[triple[1]]],
+                      **{"predicate":True, "vprev":subj, "vnext":obj})
         kg.add_walk(subj, pred, obj)
     return kg
 
@@ -210,44 +211,44 @@ def add_triple(data: Data, s: Tuple[str, str], p: str, o: Tuple[str, str], verbo
     return data
 
 
-def delete_triple(data: Data, si, pi, oi, verbose=0) -> Data:
+# def delete_triple(data: Data, si, pi, oi, verbose=0) -> Data:
 
-    triples = data.triples
-    triples = triples[~((triples[:, 0] == si) & (
-        triples[:, 1] == pi) & (triples[:, 2] == oi))]
-    data.triples = triples
-    to_pop = []
+#     triples = data.triples
+#     triples = triples[~((triples[:, 0] == si) & (
+#         triples[:, 1] == pi) & (triples[:, 2] == oi))]
+#     data.triples = triples
+#     to_pop = []
 
-    if len(triples[triples[:, 0] == si]) == 0 and len(triples[triples[:, 2] == si]) == 0:
-        to_pop.append(int(si.numpy()))
+#     if len(triples[triples[:, 0] == si]) == 0 and len(triples[triples[:, 2] == si]) == 0:
+#         to_pop.append(int(si.numpy()))
 
-    if len(triples[triples[:, 1] == pi]) == 0:
-        data.i2r.pop(int(pi.numpy()))
-        updated_r2i = {}
-        for i in data.i2r:
-            updated_r2i[data.i2r[i]] = i
-        data.r2i = updated_r2i
-        data.num_relations -= 1
-        if (verbose > 0):
-            print(f'deleted relation:')
-            print(f'{pi}')
+#     if len(triples[triples[:, 1] == pi]) == 0:
+#         data.i2r.pop(int(pi.numpy()))
+#         updated_r2i:Dict[str,int] = {}
+#         for i in data.i2r:
+#             updated_r2i[data.i2r[i]] = i
+#         data.r2i = updated_r2i
+#         data.num_relations -= 1
+#         if (verbose > 0):
+#             print(f'deleted relation:')
+#             print(f'{pi}')
 
-    if len(triples[triples[:, 0] == oi]) == 0 and len(triples[triples[:, 2] == oi]) == 0:
-        to_pop.append(int(oi.numpy()))
-    to_pop.sort(reverse=True)
-    if len(to_pop) > 0:
-        for elem in to_pop:
-            data.i2e.pop(elem)
-        updated_e2i = {}
-        for i in range(len(data.i2e)):
-            updated_e2i[data.i2e[i]] = i
-        data.e2i = updated_e2i
-        data.num_entities -= 1
-        if (verbose > 0):
-            print(f'deleted entity:')
-            print(f'{to_pop}')
+#     if len(triples[triples[:, 0] == oi]) == 0 and len(triples[triples[:, 2] == oi]) == 0:
+#         to_pop.append(int(oi.numpy()))
+#     to_pop.sort(reverse=True)
+#     if len(to_pop) > 0:
+#         for elem in to_pop:
+#             data.i2e.pop(elem)
+#         updated_e2i = {}
+#         for i in range(len(data.i2e)):
+#             updated_e2i[data.i2e[i]] = i
+#         data.e2i = updated_e2i
+#         data.num_entities -= 1
+#         if (verbose > 0):
+#             print(f'deleted entity:')
+#             print(f'{to_pop}')
 
-    return data
+#     return data
 
 def delete_r(data:Data, r):
     # get subset data

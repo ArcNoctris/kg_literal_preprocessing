@@ -99,3 +99,5 @@ outputs
 *.csv
 *.pickle
 *.png
+*.pgf
+*.tex

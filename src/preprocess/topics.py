@@ -22,7 +22,7 @@ from utils import URI_PREFIX
 import numpy as np
 from sklearn.neighbors import LocalOutlierFactor
 import datetime
-from utils import URI_PREFIX
+# from utils import URI_PREFIX
 # from preprocess.binning import delete_empty_bin_types
 from nltk.corpus import stopwords
 import gensim
@@ -37,6 +37,22 @@ import pickle
 import pyLDAvis
 import os
 import re
+import numpy as np
+
+from os.path import join
+from pathlib import Path
+
+import pandas as pd
+import gzip, base64, io, sys, warnings, wget, os, random
+
+import torch
+from utils import get_relevant_relations, IMAGE_TYPES
+from PIL import Image
+import torch
+import torchvision.models as models
+import torchvision.transforms as transforms
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
 
 def delete_empty_bin_types(data: Data, num_bins:int)-> Data:
     to_delete= []
@@ -128,8 +144,10 @@ def LDA_topic_assignment(data, num_topics=10, min_mean_word_count = 3, max_assig
             print(corpus[:1][0][:30])
             num_topics = 10
             lda_model = gensim.models.LdaMulticore(corpus=corpus,
+                                                   iterations=100,
                                        id2word=id2word,
-                                       num_topics=num_topics)
+                                       num_topics=num_topics,
+                                       random_state=42)
             df['vector'] = df['text_preprocessed'].apply(lambda t: id2word.doc2bow(t))
             df['topics'] = df['vector'].apply(lambda t: [x[0] for x in sorted(lda_model.get_document_topics(t), key=lambda x: x[1], reverse=True)[:3] if x[1]>0.1])
             for i in range(num_topics):
@@ -145,5 +163,82 @@ def LDA_topic_assignment(data, num_topics=10, min_mean_word_count = 3, max_assig
                     sub_df[:,1] = data.r2i[f'{URI_PREFIX}predicat#topics{r}']
                     sub_df[:,2] = data.e2i[f'{URI_PREFIX}entity#topic{i}', f'{URI_PREFIX}datatype#topics']
                     data.triples = torch.cat((data.triples, sub_df), 0)
-    data = delete_empty_bin_types(data,num_topics)
+    #data = delete_empty_bin_types(data,num_topics)
+    return data
+
+
+
+
+
+def is_image(b64):
+    try:
+        imgdata = base64.urlsafe_b64decode(b64)
+    except:
+        # print(f'Could not decode b64 string {b64}')
+        return False
+    return True
+
+def get_image(b64):
+    try:
+        imgdata = base64.urlsafe_b64decode(b64)
+    except:
+        print(f'Could not decode b64 string {b64}')
+        return Image.new('RGB', (1, 1))
+
+
+    try:
+        return Image.open(io.BytesIO(base64.urlsafe_b64decode(b64)))
+    except:
+        return Image.new('RGB', (1, 1))
+
+def eval_image(image, preprocess, model, device= "cpu"):
+    input_tensor = preprocess(image)
+    input_batch = input_tensor.unsqueeze(0)
+    input_batch = input_batch.to(device)
+    return vgg(input_batch).squeeze(0).softmax(0).argmax().item()
+    
+
+def VGG_image_classification(data, **kwargs ):
+    relevant_relations = get_relevant_relations(data, IMAGE_TYPES)
+    df = pd.DataFrame(data.triples[torch.isin(data.triples[:,1],torch.tensor(relevant_relations))], columns = ["s","p","o"])
+    vgg = models.vgg16(pretrained=True)
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    vgg = vgg.to(device)
+    vgg.eval()
+
+    preprocess = transforms.Compose([
+        transforms.ToTensor(),  # Convert the image to a tensor
+        transforms.Resize(256),  # Resize the image to 256x256 pixels
+        # transforms.CenterCrop(224),  # Crop the center 224x224 pixels
+        # transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])  # Normalize the image
+    ])
+    
+    df["b64"] = df['o'].apply(lambda x: data.i2e[x][0])
+    df["is_image"] = df["b64"].apply(lambda x: is_image(x))
+    df = df[df['is_image']==True]
+    df["image"] = df['b64'].apply(lambda x: get_image(x))
+    df['class']= df["image"].apply(lambda x: vgg(preprocess(x).unsqueeze(0).to(device)).squeeze(0).softmax(0).argmax().item())
+    print(df['class'])
+
+    for pred in df['p'].unique(): # use this over relation since loading image can subset df
+        sub_df = df[df['p']==pred]
+        p = f'{URI_PREFIX}predicat#img-class-{pred}'
+        new_id = len(data.i2r)
+        data.r2i[p] = new_id
+        data.i2r.append(p)
+        data.num_relations += 1
+        for c in sub_df["class"].unique():
+            o = (f'{URI_PREFIX}entity#img-class-{c}-{pred}',
+            f'{URI_PREFIX}datatype#img-class')
+            new_id = len(data.i2e)
+            data.e2i[o] = new_id
+            data.i2e.append(o)
+            data.num_entities += 1
+
+            
+        sub_df['new_o'] = sub_df["class"].apply(lambda c: data.e2i[(f'{URI_PREFIX}entity#img-class-{c}-{pred}',
+            f'{URI_PREFIX}datatype#img-class')])
+        sub_df['new_p'] = sub_df["class"].apply(lambda f: data.r2i[f'{URI_PREFIX}predicat#img-class-{pred}'])
+        ten = torch.tensor(sub_df[['s','new_p','new_o']].values.astype(np.int32), dtype= torch.int32)
+        data.triples = torch.cat((data.triples, ten), 0)
     return data

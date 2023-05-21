@@ -22,12 +22,12 @@ schedule:
     - ExAll
 
     - InNumbers
-    - InDates
+    # - InDates # only apply to amplus and mdgenre
     - InText
     - InImages
     
     - ExNumbers
-    - ExDates
+    # - ExDates # only apply to amplus and mdgenre
     - ExText
     - ExImages
 
@@ -44,6 +44,23 @@ schedule:
     - 1_pct_bins
     - 5_pct_bins
     - 10_pct_bins
+
+    - 5_10_100_hierarchy
+    - 5lvl_binary_hierarchy
+
+    - 10_overlapping
+    - 100_overlapping
+
+    - propConst
+    - propConst_LOF
+    - propValConst
+    - propValConst_LOF
+
+    # - date_features # only apply to amplus and mdgenre
+    # - date_binning # only apply to amplus and mdgenre
+
+    - LDA_topics
+    - VGG_classes
 
 
   embed:
