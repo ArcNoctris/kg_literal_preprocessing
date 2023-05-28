@@ -94,6 +94,13 @@ VGG_classes:
   - VGG_image_classification
   - delete_all_literals
 
+MKGA:
+  - rel_bound_LOF_subpopulation
+  - LDA_topic_assignment
+  - VGG_image_classification
+  - delete_image_literals
+
+
 
 
 test1:
